@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "seed:admin": "node src/seedAdmin.js"
-  },
+  "start": "node src/server.js",
+  "dev": "nodemon src/server.js",
+  "seed:admin": "node src/seedAdmin.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
