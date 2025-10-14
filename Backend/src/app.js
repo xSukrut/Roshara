@@ -2,6 +2,9 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import authRoutes from "../routes/authRoutes.js";
+import productRoutes from '../routes/productRoutes.js';
+import collectionRoutes from '../routes/collectionRoutes.js';
+import orderRoutes from "../routes/orderRoutes.js";
 
 dotenv.config();
 
@@ -18,6 +21,9 @@ mongoose
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/collections", collectionRoutes);
+app.use("/api/orders", orderRoutes)
 
 // Default route
 app.get("/", (req, res) => {

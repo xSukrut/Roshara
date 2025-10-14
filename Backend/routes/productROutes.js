@@ -10,15 +10,11 @@ import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-//Admin Routes
-
-router.post("/", protect, admin, createProduct);
-router.put('/:id', protect, admin,  updateProduct);
-router.delete('/:id', protect, admin, deleteProduct);
-
-//Public Routes
-
-router.get('/', getAllProducts);
-router.get('/:id', getProductById);
+router.route("/").get(getAllProducts).post(protect, admin, createProduct);
+router
+.route("/:id")
+.get(getProductById)
+.put(protect, admin, updateProduct)
+.delete(protect, admin, deleteProduct);
 
 export default router;
