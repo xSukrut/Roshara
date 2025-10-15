@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
         default:"customer",
         },
     },
-    { timestamp: true }
+    { timestamps: true }
 );
 
 //Hasing password before saving 

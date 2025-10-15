@@ -1,7 +1,6 @@
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Coupon from "../models/Coupon.js";
-
 // create order (customer)
 export const createOrder = async (req, res) => {
   try {
