@@ -1,22 +1,31 @@
 import express from "express";
 import {
   createCoupon,
-  getAllCoupons,
+  getCoupons,
+  getCouponById,
   updateCoupon,
   deleteCoupon,
+  validateCoupon,
   applyCoupon
 } from "../controllers/couponController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// admin
-router.post("/", protect, admin, createCoupon);
-router.get("/", protect, admin, getAllCoupons);
-router.put("/:id", protect, admin, updateCoupon);
-router.delete("/:id", protect, admin, deleteCoupon);
+// ✅ Admin Routes
+router.route("/")
+  .post(protect, admin, createCoupon) // create coupon
+  .get(protect, admin, getCoupons);  // list all coupons
 
-// public apply (customer must be logged in)
-router.post("/apply", protect, applyCoupon);
+router.route("/:id")
+  .get(protect, admin, getCouponById)  // get single coupon
+  .put(protect, admin, updateCoupon)   // update coupon
+  .delete(protect, admin, deleteCoupon); // delete coupon
+
+// ✅ Customer Routes
+router.post("/validate", protect, validateCoupon); // check coupon validity
+router.post("/apply", protect, applyCoupon);       // apply coupon to order/cart
 
 export default router;
+
+

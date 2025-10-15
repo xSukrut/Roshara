@@ -1,99 +1,146 @@
+// controllers/couponController.js
 import Coupon from "../models/Coupon.js";
 
-// create coupon (admin)
+// Create a new coupon (Admin)
 export const createCoupon = async (req, res) => {
   try {
-    const { code, discountType, value, minOrderAmount = 0, usageLimit = 0, expiryDate = null } = req.body;
-    // upper-case code
-    const upper = code.toUpperCase();
-    const existing = await Coupon.findOne({ code: upper });
-    if (existing) return res.status(400).json({ message: "Coupon code already exists" });
+    const { code, discountType, value, minOrderAmount, expiryDate, usageLimit } = req.body;
+
+    const exists = await Coupon.findOne({ code: code.toUpperCase() });
+    if (exists) return res.status(400).json({ message: "Coupon code already exists" });
 
     const coupon = await Coupon.create({
-      code: upper,
+      code,
       discountType,
       value,
       minOrderAmount,
-      usageLimit,
       expiryDate,
-      active: true,
+      usageLimit,
     });
 
     res.status(201).json(coupon);
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: err.message });
   }
 };
 
-// get all coupons (admin)
-export const getAllCoupons = async (req, res) => {
+// Get all coupons (Admin)
+export const getCoupons = async (req, res) => {
   try {
     const coupons = await Coupon.find().sort({ createdAt: -1 });
     res.json(coupons);
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: err.message });
   }
 };
 
-// update coupon (admin)
+// Get single coupon by ID (Admin)
+export const getCouponById = async (req, res) => {
+  try {
+    const coupon = await Coupon.findById(req.params.id);
+    if (!coupon) return res.status(404).json({ message: "Coupon not found" });
+    res.json(coupon);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Update coupon (Admin)
 export const updateCoupon = async (req, res) => {
+  try {
+    const { code, discountType, value, minOrderAmount, expiryDate, usageLimit, active } = req.body;
+    const coupon = await Coupon.findById(req.params.id);
+    if (!coupon) return res.status(404).json({ message: "Coupon not found" });
+
+    coupon.code = code || coupon.code;
+    coupon.discountType = discountType || coupon.discountType;
+    coupon.value = value || coupon.value;
+    coupon.minOrderAmount = minOrderAmount || coupon.minOrderAmount;
+    coupon.expiryDate = expiryDate || coupon.expiryDate;
+    coupon.usageLimit = usageLimit ?? coupon.usageLimit;
+    coupon.active = active ?? coupon.active;
+
+    const updated = await coupon.save();
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Delete coupon (Admin)
+export const deleteCoupon = async (req, res) => {
   try {
     const coupon = await Coupon.findById(req.params.id);
     if (!coupon) return res.status(404).json({ message: "Coupon not found" });
 
-    Object.assign(coupon, req.body);
-    coupon.code = coupon.code.toUpperCase();
-    await coupon.save();
-    res.json(coupon);
+    await coupon.deleteOne();
+    res.json({ message: "Coupon deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: err.message });
   }
 };
 
-// delete coupon (admin)
-export const deleteCoupon = async (req, res) => {
+// Validate coupon (Customer)
+export const validateCoupon = async (req, res) => {
   try {
-    await Coupon.findByIdAndDelete(req.params.id);
-    res.json({ message: "Coupon deleted" });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// apply coupon (customer) -> returns discount amount and new totals (doesn't change DB)
-export const applyCoupon = async (req, res) => {
-  try {
-    const { code, itemsPrice } = req.body;
-    if (!code) return res.status(400).json({ message: "Coupon code required" });
-
+    const { code, orderAmount } = req.body;
     const coupon = await Coupon.findOne({ code: code.toUpperCase(), active: true });
-    if (!coupon) return res.status(400).json({ message: "Invalid coupon" });
+    if (!coupon) return res.status(400).json({ message: "Invalid or inactive coupon" });
 
     if (coupon.expiryDate && coupon.expiryDate < new Date()) {
       return res.status(400).json({ message: "Coupon expired" });
     }
     if (coupon.usageLimit > 0 && coupon.usedCount >= coupon.usageLimit) {
-      return res.status(400).json({ message: "Coupon usage limit exceeded" });
+      return res.status(400).json({ message: "Coupon usage limit reached" });
     }
-    if (itemsPrice < coupon.minOrderAmount) {
-      return res.status(400).json({ message: `Minimum order amount for this coupon is ${coupon.minOrderAmount}` });
+    if (orderAmount < coupon.minOrderAmount) {
+      return res.status(400).json({
+        message: `Minimum order amount for this coupon is ${coupon.minOrderAmount}`,
+      });
     }
+
+    res.json({
+      valid: true,
+      discountType: coupon.discountType,
+      value: coupon.value,
+      message: "Coupon applied successfully",
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const applyCoupon = async (req, res) => {
+  try {
+    const { code, totalAmount } = req.body;
+
+    const coupon = await Coupon.findOne({ code: code.toUpperCase(), active: true });
+    if (!coupon) return res.status(400).json({ message: "Invalid or inactive coupon" });
+
+    if (coupon.expiryDate && new Date() > coupon.expiryDate) return res.status(400).json({ message: "Coupon expired" });
+
+    if (coupon.usageLimit > 0 && coupon.usedCount >= coupon.usageLimit) return res.status(400).json({ message: "Coupon usage limit reached" });
+
+    if (totalAmount < coupon.minOrderAmount) return res.status(400).json({ message: `Minimum order amount for this coupon is ₹${coupon.minOrderAmount}` });
 
     let discount = 0;
     if (coupon.discountType === "percentage") {
-      discount = Math.round((itemsPrice * coupon.value) / 100);
+      discount = Math.round((totalAmount * coupon.value) / 100);
     } else {
       discount = coupon.value;
     }
-    if (discount > itemsPrice) discount = itemsPrice;
 
-    res.json({
-      code: coupon.code,
-      discount,
-      newTotal: itemsPrice - discount,
-      couponId: coupon._id,
-    });
+    // Ensure discount doesn't exceed total
+    if (discount > totalAmount) discount = totalAmount;
+
+    const newTotal = totalAmount - discount;
+
+    // increment usedCount
+    coupon.usedCount = (coupon.usedCount || 0) + 1;
+    await coupon.save();
+
+    res.status(200).json({ message: "Coupon applied successfully", discount, newTotal });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };

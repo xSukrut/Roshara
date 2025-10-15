@@ -1,6 +1,7 @@
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Coupon from "../models/Coupon.js";
+
 // create order (customer)
 export const createOrder = async (req, res) => {
   try {
@@ -19,39 +20,43 @@ export const createOrder = async (req, res) => {
 
     // compute itemsPrice
     let itemsPrice = 0;
-    // verify product IDs and compute current price
     for (const item of orderItems) {
       const prod = await Product.findById(item.product);
       if (!prod) return res.status(400).json({ message: `Product ${item.product} not found` });
-      itemsPrice += (prod.price * item.quantity);
-      // normalize item name & price
+
+      itemsPrice += prod.price * item.quantity;
       item.name = prod.name;
       item.price = prod.price;
     }
 
-    // apply coupon if provided (validate)
+    // apply coupon if provided
     let discountAmount = 0;
+    let coupon = null;
+
     if (couponCode) {
-      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), active: true });
-      if (!coupon) return res.status(400).json({ message: "Invalid coupon code" });
+      coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), active: true });
+
+      if (!coupon) return res.status(400).json({ message: "Invalid or inactive coupon" });
 
       if (coupon.expiryDate && coupon.expiryDate < new Date()) {
         return res.status(400).json({ message: "Coupon expired" });
       }
+
       if (coupon.usageLimit > 0 && coupon.usedCount >= coupon.usageLimit) {
-        return res.status(400).json({ message: "Coupon usage limit exceeded" });
-      }
-      if (itemsPrice < coupon.minOrderAmount) {
-        return res.status(400).json({ message: `Minimum order amount for coupon is ${coupon.minOrderAmount}` });
+        return res.status(400).json({ message: "Coupon usage limit reached" });
       }
 
+      if (itemsPrice < coupon.minOrderAmount) {
+        return res.status(400).json({ message: `Minimum order amount for coupon is ₹${coupon.minOrderAmount}` });
+      }
+
+      // calculate discount
       if (coupon.discountType === "percentage") {
         discountAmount = Math.round((itemsPrice * coupon.value) / 100);
       } else {
         discountAmount = coupon.value;
       }
 
-      // don't allow discount > itemsPrice
       if (discountAmount > itemsPrice) discountAmount = itemsPrice;
     }
 
@@ -71,13 +76,20 @@ export const createOrder = async (req, res) => {
     });
 
     const created = await order.save();
-    
+
+    // increment coupon usedCount if coupon applied
+    if (coupon) {
+      coupon.usedCount = (coupon.usedCount || 0) + 1;
+      await coupon.save();
+    }
+
     res.status(201).json(created);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // get order by id
 export const getOrderById = async (req, res) => {
