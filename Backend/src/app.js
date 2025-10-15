@@ -5,6 +5,7 @@ import authRoutes from "../routes/authRoutes.js";
 import productRoutes from '../routes/productRoutes.js';
 import collectionRoutes from '../routes/collectionRoutes.js';
 import orderRoutes from "../routes/orderRoutes.js";
+import couponRoutes from "../routes/couponRoutes.js";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/collections", collectionRoutes);
 app.use("/api/orders", orderRoutes)
+app.use("/api/coupons", couponRoutes);
 
 // Default route
 app.get("/", (req, res) => {

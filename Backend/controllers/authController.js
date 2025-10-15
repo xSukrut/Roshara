@@ -1,5 +1,4 @@
 import User from "../models/User.js";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 // Generate JWT token
@@ -7,22 +6,24 @@ const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
 
-// Register new user
+//  Register a new customer
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    // Check if user already exists
     const userExists = await User.findOne({ email });
-    if (userExists)
+    if (userExists) {
       return res.status(400).json({ message: "User already exists" });
+    }
 
+    // Create new user (password automatically hashed by pre-save hook)
     const user = await User.create({
-  name,
-  email,
-  password, // plain password, model pre-save will hash it
-  role: "customer",
-});
-
+      name,
+      email,
+      password,
+      role: "customer",
+    });
 
     res.status(201).json({
       _id: user._id,
@@ -37,36 +38,32 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// Login user
+//  Login user
 export const loginUser = async (req, res) => {
   try {
-    console.log("Login request body:", req.body);
-
     const { email, password } = req.body;
 
+    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      console.log("No user found with email:", email);
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    console.log("Stored hashed password:", user.password);
-    console.log("Password from request:", password);
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    console.log("Password match result:", isMatch);
-
-    if (!isMatch)
+    // Match password using model method
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
+    }
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "30d" });
+    // Generate token
+    const token = generateToken(user._id, user.role);
 
     res.status(200).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token
+      token,
     });
   } catch (err) {
     console.error(err);
