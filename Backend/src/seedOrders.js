@@ -11,41 +11,37 @@ const seedOrders = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("MongoDB connected");
 
-    // Get a user (assume first customer)
-    const user = await User.findOne({ role: "customer" });
-    if (!user) throw new Error("No customer found. Seed a customer first!");
+    const customer = await User.findOne({ role: "customer" });
+    if (!customer) return console.log("No customer found. Seed a customer first.");
 
-    // Get a product (assume first product)
-    const product = await Product.findOne();
-    if (!product) throw new Error("No product found. Seed products first!");
+    const products = await Product.find();
+    if (products.length === 0) return console.log("No products found. Seed products first.");
+
+    const orderItems = products.slice(0, 2).map(prod => ({
+      product: prod._id,
+      name: prod.name,
+      quantity: 1,
+      price: prod.price
+    }));
 
     const order = await Order.create({
-      user: user._id,
-      orderItems: [
-        {
-          product: product._id,
-          name: product.name,
-          quantity: 2,
-          price: product.price,
-        },
-      ],
+      user: customer._id,
+      orderItems,
       shippingAddress: {
-        address: "123 Test Street",
+        address: "123 Main St",
         city: "Mumbai",
         postalCode: "400001",
-        country: "India",
+        country: "India"
       },
-      paymentMethod: "Stripe",
-      taxPrice: 10,
-      shippingPrice: 5,
-      totalPrice: product.price * 2 + 10 + 5,
+      paymentMethod: "cod",
+      itemsPrice: orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0),
+      totalPrice: orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
     });
 
-    console.log("🎉 Dummy order created successfully!");
-    console.log(order);
+    console.log("Order seeded:", order);
     process.exit(0);
-  } catch (error) {
-    console.error("Error seeding orders:", error);
+  } catch (err) {
+    console.error("Error seeding orders:", err);
     process.exit(1);
   }
 };
