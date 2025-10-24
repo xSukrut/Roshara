@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import authRoutes from "../routes/authRoutes.js";
@@ -13,6 +14,17 @@ const app = express();
 
 // Middleware to parse JSON
 app.use(express.json());
+
+const frontendOrigin = process.env.FRONTEND_URL || "http://localhost:3000";
+app.use(cors({
+  origin: frontendOrigin,
+  credentials: true, 
+}));
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  next();
+});
 
 // MongoDB connection
 mongoose
