@@ -46,10 +46,14 @@ export const createProduct = async (req, res) => {
   }
 };
 
-//  Get all products
+// Get all products (with optional filters)
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find().populate("collection", "name");
+    const filter = {};
+    if (req.query.featured === "true") filter.isFeatured = true;
+    if (req.query.collection) filter.collection = req.query.collection;
+
+    const products = await Product.find(filter).populate("collection", "name");
     res.status(200).json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
