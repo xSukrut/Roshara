@@ -1,25 +1,25 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getAllCollections } from "../services/collectionService";
-import CollectionCard from "../components/CollectionCard";
+import { getAllCollections } from "../../services/collectionService";
 
 export default function CollectionsPage() {
   const [collections, setCollections] = useState([]);
 
   useEffect(() => {
-    getAllCollections()
-      .then(setCollections)
-      .catch(console.error);
+    getAllCollections().then(setCollections);
   }, []);
 
   return (
-    <section className="container mx-auto p-6">
+    <div className="min-h-screen p-6">
       <h1 className="text-2xl font-bold mb-4">Collections</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {collections.map((c) => (
-          <CollectionCard key={c._id} collection={c} />
+          <div key={c._id} className="border rounded-lg p-4 bg-gray-50">
+            <h2 className="text-xl font-semibold">{c.name}</h2>
+            <p className="text-gray-600">{c.description}</p>
+          </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 }
