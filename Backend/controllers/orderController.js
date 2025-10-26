@@ -148,6 +148,7 @@ export const updateOrderStatus = async (req, res) => {
 // simulate marking order as paid (customer) — useful for testing
 export const payOrderSimulated = async (req, res) => {
   try {
+    const { transactionId } = req.body;
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: "Order not found" });
     if (order.status === "paid") return res.status(400).json({ message: "Order already paid" });
@@ -155,22 +156,11 @@ export const payOrderSimulated = async (req, res) => {
     order.status = "paid";
     order.paidAt = Date.now();
     order.paymentResult = {
-      id: `TEST_${Date.now()}`,
+      id: transactionId || `MANUAL_${Date.now()}`,
       status: "success",
       update_time: new Date().toISOString(),
       email_address: req.user.email,
     };
-
-    // if coupon was used, increment usedCount now
-    // find coupon code from request body (optional)
-    const { couponCode } = req.body;
-    if (couponCode) {
-      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
-      if (coupon) {
-        coupon.usedCount += 1;
-        await coupon.save();
-      }
-    }
 
     const updated = await order.save();
     res.json(updated);

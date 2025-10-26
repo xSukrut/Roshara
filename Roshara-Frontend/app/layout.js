@@ -1,6 +1,7 @@
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import { CartProvider } from "../context/CartContext";
+import { WishlistProvider } from "../context/WishlistContext";
 import Navbar from "./components/Navbar";
 import ShowMiniCart from "./components/ShowMiniCart";
 
@@ -14,11 +15,13 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <AuthProvider>
-          <CartProvider>
-            <Navbar />
-            <ShowMiniCart />
-            <main className="pt-16">{children}</main>
-          </CartProvider>
+          <WishlistProvider>
+            <CartProvider>
+              <Navbar />
+              <ShowMiniCart />
+              <main className="pt-16">{children}</main>
+            </CartProvider>
+          </WishlistProvider>
         </AuthProvider>
       </body>
     </html>

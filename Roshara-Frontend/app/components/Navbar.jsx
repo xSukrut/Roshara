@@ -1,4 +1,3 @@
-// app/components/Navbar.jsx
 "use client";
 
 import Image from "next/image";
@@ -9,6 +8,7 @@ import { Heart, ShoppingBag, User } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
+import { useWishlist } from "../../context/WishlistContext";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -16,7 +16,6 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // scroll listener → fade to solid on home
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     onScroll();
@@ -25,18 +24,13 @@ export default function Navbar() {
   }, []);
 
   const { user, logout } = useAuth();
+  const cartItems = useCart()?.items || [];
+  const { items: wishlistItems } = useWishlist();
 
-  let cartItems = [];
-  try {
-    cartItems = useCart()?.items || [];
-  } catch {
-    cartItems = [];
-  }
   const cartCount = cartItems.reduce((sum, it) => sum + (it.qty || 0), 0);
+  const wishlistCount = wishlistItems.length;
 
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
+  useEffect(() => setMenuOpen(false), [pathname]);
 
   const navLinks = [
     { name: "New Arrivals", path: "/new-arrivals", dropdown: [] },
@@ -46,7 +40,6 @@ export default function Navbar() {
     { name: "Contact Us", path: "/contact", dropdown: [] },
   ];
 
-  // appearance logic
   const isTransparent = isHome && !scrolled;
   const textClass = isTransparent ? "text-white" : "text-black";
   const hoverClass = isTransparent ? "hover:text-gray-300" : "hover:text-gray-700";
@@ -77,22 +70,9 @@ export default function Navbar() {
             const active = pathname === link.path;
             return (
               <li key={link.name} className="relative group">
-                <Link
-                  href={link.path}
-                  className={`${hoverClass} ${active ? "underline underline-offset-8" : ""}`}
-                >
+                <Link href={link.path} className={`${hoverClass} ${active ? "underline underline-offset-8" : ""}`}>
                   {link.name}
                 </Link>
-                {/* dropdown placeholder */}
-                {link.dropdown.length > 0 && (
-                  <ul className="absolute left-0 top-full mt-2 bg-white text-black rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 min-w-[180px]">
-                    {link.dropdown.map((item) => (
-                      <li key={item.name} className="px-4 py-2 hover:bg-gray-100">
-                        <Link href={item.path}>{item.name}</Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </li>
             );
           })}
@@ -100,11 +80,14 @@ export default function Navbar() {
 
         {/* Icons + Auth (Desktop) */}
         <div className={`hidden md:flex items-center space-x-4 ${textClass}`}>
-          <button aria-label="Wishlist" className={hoverClass}>
+          {/* Wishlist → /wishlist */}
+          <Link href="/wishlist" className={`relative flex items-center ${hoverClass}`} aria-label="Wishlist">
             <Heart />
-          </button>
+            <span className="ml-2 text-sm">{wishlistCount}</span>
+          </Link>
 
-          <Link href="/cart" className={`relative flex items-center ${hoverClass}`}>
+          {/* Cart → /cart */}
+          <Link href="/cart" className={`relative flex items-center ${hoverClass}`} aria-label="Cart">
             <ShoppingBag />
             <span className="ml-2 text-sm">{cartCount}</span>
           </Link>
@@ -133,9 +116,7 @@ export default function Navbar() {
                 <User />
                 <span className="hidden sm:inline">Login</span>
               </Link>
-              <Link href="/auth/register" className={`text-sm ${hoverClass}`}>
-                Register
-              </Link>
+              <Link href="/auth/register" className={`text-sm ${hoverClass}`}>Register</Link>
             </div>
           )}
         </div>
@@ -165,35 +146,17 @@ export default function Navbar() {
                 </Link>
               </li>
             ))}
+
             <li className="pt-4 border-t">
               <div className="flex items-center justify-between">
+                <Link href="/wishlist" className="flex items-center gap-2">
+                  <Heart />
+                  <span>Wishlist ({wishlistCount})</span>
+                </Link>
                 <Link href="/cart" className="flex items-center gap-2">
                   <ShoppingBag />
                   <span>Cart ({cartCount})</span>
                 </Link>
-                {user ? (
-                  <div className="flex items-center gap-2">
-                    <span>Hi, {user.name}</span>
-                    {user.role === "admin" && (
-                      <Link href="/admin/dashboard" className="px-2 py-1 border rounded">
-                        Admin
-                      </Link>
-                    )}
-                    <button onClick={logout} className="ml-2 px-2 py-1 bg-black text-white rounded">
-                      Logout
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <Link href="/auth/login" className="flex items-center gap-2">
-                      <User />
-                      <span>Login</span>
-                    </Link>
-                    <Link href="/auth/register" className="text-sm underline">
-                      Register
-                    </Link>
-                  </div>
-                )}
               </div>
             </li>
           </ul>
