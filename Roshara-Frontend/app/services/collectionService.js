@@ -1,5 +1,5 @@
 
-import api from "../lib/apiClient";
+import api from "../../lib/apiClient";
 
 export const getAllCollections = async () => {
   const res = await api.get("/collections");

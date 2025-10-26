@@ -1,13 +1,25 @@
 "use client";
-import AdminRoute from "../../components/AdminRoute";
+import Link from "next/link";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function AdminDashboard() {
+  const { user } = useAuth();
+
+  if (!user || user.role !== "admin") {
+    return <p className="p-6 text-red-500">Access denied. Admins only.</p>;
+  }
+
   return (
-    <AdminRoute>
-      <div className="p-10 text-center">
-        <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
-        <p>Welcome, Admin! Here you’ll manage products, orders, and coupons.</p>
+    <div className="min-h-screen p-8">
+      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+      <div className="grid grid-cols-2 gap-6">
+        <Link href="/admin/products" className="p-6 border rounded-lg hover:bg-gray-50">
+          Manage Products →
+        </Link>
+        <Link href="/admin/collections" className="p-6 border rounded-lg hover:bg-gray-50">
+          Manage Collections →
+        </Link>
       </div>
-    </AdminRoute>
+    </div>
   );
 }
