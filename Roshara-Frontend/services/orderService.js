@@ -1,22 +1,30 @@
-// services/orderService.js
-import api from "../lib/apiClient";
+import api from "../../lib/apiClient";
 
-export const createOrder = async (orderBody) => {
-  const res = await api.post("/orders", orderBody);
+// create order with items + shipping + couponCode (optional)
+export const createOrder = async ({
+  userTokenIsAlreadyOnApi = true,
+  orderItems,
+  shippingAddress,
+  paymentMethod = "cod",
+  taxPrice = 0,
+  shippingPrice = 0,
+  couponCode = null,
+}) => {
+  const payload = {
+    orderItems: orderItems.map((it) => ({
+      product: it._id,
+      quantity: it.qty,
+      // name/price will be filled on backend anyway, but harmless to send
+      name: it.name,
+      price: it.price,
+    })),
+    shippingAddress,
+    paymentMethod,
+    taxPrice,
+    shippingPrice,
+    couponCode,
+  };
+  const res = await api.post("/orders", payload);
   return res.data;
 };
 
-export const payOrderSimulated = async (orderId, couponCode) => {
-  const res = await api.put(`/orders/${orderId}/pay`, { couponCode });
-  return res.data;
-};
-
-export const getMyOrders = async () => {
-  const res = await api.get("/orders/myorders");
-  return res.data;
-};
-
-export const getOrderById = async (id) => {
-  const res = await api.get(`/orders/${id}`);
-  return res.data;
-};

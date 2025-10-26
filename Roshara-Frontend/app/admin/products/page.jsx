@@ -1,22 +1,23 @@
 "use client";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import Link from "next/link";
-import { useAuth } from "../../../context/AuthContext";
+import api from "../../../lib/apiClient";
+
+const imgUrl = (src) => {
+  if (!src) return "";
+  return src.startsWith("http") ? src : `http://localhost:5000${src}`;
+};
 
 export default function AdminProducts() {
-  const { token } = useAuth();
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/products").then((res) => setProducts(res.data));
+    api.get("/products").then((res) => setProducts(res.data));
   }, []);
 
   const handleDelete = async (id) => {
-    await axios.delete(`http://localhost:5000/api/products/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setProducts(products.filter((p) => p._id !== id));
+    await api.delete(`/products/${id}`);
+    setProducts((prev) => prev.filter((p) => p._id !== id));
   };
 
   return (
@@ -43,9 +44,9 @@ export default function AdminProducts() {
           {products.map((p) => (
             <tr key={p._id}>
               <td className="p-2 border text-center">
-                {p.images?.length > 0 ? (
+                {p.images?.[0] ? (
                   <img
-                    src={`http://localhost:5000${p.images[0]}`}
+                    src={imgUrl(p.images[0])}
                     alt={p.name}
                     className="w-16 h-16 object-cover mx-auto rounded"
                   />
@@ -71,6 +72,13 @@ export default function AdminProducts() {
               </td>
             </tr>
           ))}
+          {products.length === 0 && (
+            <tr>
+              <td className="p-4 text-center text-gray-500" colSpan={4}>
+                No products found
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

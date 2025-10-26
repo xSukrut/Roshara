@@ -1,22 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import Link from "next/link";
-import { useAuth } from "../../../context/AuthContext";
+import api from "../../../lib/apiClient";
+
+const imgUrl = (src) => (src?.startsWith("http") ? src : `http://localhost:5000${src}`);
 
 export default function AdminCollections() {
-  const { token } = useAuth();
   const [collections, setCollections] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/collections").then((res) => setCollections(res.data));
+    api.get("/collections").then((res) => setCollections(res.data));
   }, []);
 
   const handleDelete = async (id) => {
-    await axios.delete(`http://localhost:5000/api/collections/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setCollections(collections.filter((c) => c._id !== id));
+    await api.delete(`/collections/${id}`);
+    setCollections((prev) => prev.filter((c) => c._id !== id));
   };
 
   return (
@@ -44,11 +42,7 @@ export default function AdminCollections() {
             <tr key={c._id}>
               <td className="p-2 border text-center">
                 {c.image ? (
-                  <img
-                    src={`http://localhost:5000${c.image}`}
-                    alt={c.name}
-                    className="w-16 h-16 object-cover mx-auto rounded"
-                  />
+                  <img src={imgUrl(c.image)} alt={c.name} className="w-16 h-16 object-cover mx-auto rounded" />
                 ) : (
                   <span className="text-gray-400">No image</span>
                 )}
@@ -56,21 +50,22 @@ export default function AdminCollections() {
               <td className="p-2 border">{c.name}</td>
               <td className="p-2 border">{c.description}</td>
               <td className="p-2 border">
-                <Link
-                  href={`/admin/collections/form?id=${c._id}`}
-                  className="text-blue-600 hover:underline mr-3"
-                >
+                <Link href={`/admin/collections/form?id=${c._id}`} className="text-blue-600 hover:underline mr-3">
                   Edit
                 </Link>
-                <button
-                  onClick={() => handleDelete(c._id)}
-                  className="text-red-600 hover:underline"
-                >
+                <button onClick={() => handleDelete(c._id)} className="text-red-600 hover:underline">
                   Delete
                 </button>
               </td>
             </tr>
           ))}
+          {collections.length === 0 && (
+            <tr>
+              <td className="p-4 text-center text-gray-500" colSpan={4}>
+                No collections found
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

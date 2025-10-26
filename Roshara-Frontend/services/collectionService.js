@@ -1,12 +1,11 @@
-import axios from "axios";
-import { API_BASE_URL } from "../utils/api";
+import api from "../../lib/apiClient";
 
 export const getAllCollections = async () => {
-  try {
-    const { data } = await axios.get(`${API_BASE_URL}/collections`);
-    return data;
-  } catch (err) {
-    console.error("Error fetching collections:", err.message);
-    return [];
-  }
+  const res = await api.get("/collections");
+  return res.data;
+};
+
+export const getCollection = async (id) => {
+  const res = await api.get(`/collections/${id}`);
+  return res.data;
 };

@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
+import api from "../lib/apiClient";
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
@@ -12,13 +13,15 @@ export const AuthProvider = ({ children }) => {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-  // ✅ Restore user from localStorage
   useEffect(() => {
     try {
       const storedToken = localStorage.getItem("token");
       const storedUser = localStorage.getItem("user");
 
-      if (storedToken) setToken(storedToken);
+      if (storedToken) {
+        setToken(storedToken);
+        api.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
+      }
       if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
         setUser(JSON.parse(storedUser));
       }
@@ -30,7 +33,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // ✅ Register
   const register = async (name, email, password) => {
     try {
       const res = await axios.post(`${API_URL}/auth/register`, { name, email, password });
@@ -40,17 +42,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Login
   const login = async (email, password) => {
     try {
       const res = await axios.post(`${API_URL}/auth/login`, { email, password });
-
       const { token, ...userData } = res.data;
+
       setUser(userData);
       setToken(token);
-
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(userData));
+
+      // set on api instance too
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
       return { success: true };
     } catch (err) {
@@ -58,12 +61,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Logout
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    delete api.defaults.headers.common.Authorization;
   };
 
   return (

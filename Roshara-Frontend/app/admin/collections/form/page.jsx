@@ -1,16 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import axios from "axios";
 import api from "../../../../lib/apiClient";
-import { useAuth } from "../../../../context/AuthContext";
+
+const asImg = (src) => (src?.startsWith("http") ? src : `http://localhost:5000${src}`);
 
 export default function CollectionForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const { token } = useAuth();
-
   const id = params.get("id");
+
   const [form, setForm] = useState({ name: "", description: "", image: "" });
   const [message, setMessage] = useState("");
 
@@ -20,18 +19,23 @@ export default function CollectionForm() {
     }
   }, [id]);
 
+  const handleUpload = async (file) => {
+    const fd = new FormData();
+    fd.append("image", file);
+    const res = await api.post("/upload", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data.imageUrl;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (id) {
-        await api.put(`/collections/${id}`, form, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await api.put(`/collections/${id}`, form);
         setMessage("Updated successfully!");
       } else {
-        await api.post(`/collections`, form, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await api.post(`/collections`, form);
         setMessage("Created successfully!");
       }
       setTimeout(() => router.push("/admin/collections"), 600);
@@ -50,35 +54,20 @@ export default function CollectionForm() {
           type="file"
           accept="image/*"
           onChange={async (e) => {
-            const file = e.target.files[0];
+            const file = e.target.files?.[0];
             if (!file) return;
-
-            const formData = new FormData();
-            formData.append("image", file);
-
             try {
-              const res = await axios.post("http://localhost:5000/api/upload", formData, {
-                headers: {
-                  "Content-Type": "multipart/form-data",
-                  Authorization: `Bearer ${token}`,
-                },
-              });
-
-              const imageUrl = res.data.imageUrl;
-
-              setForm((prev) => ({ ...prev, image: res.data.imageUrl }));
-            } catch (err) {
-              console.error("Upload failed:", err);
+              const imageUrl = await handleUpload(file);
+              setForm((prev) => ({ ...prev, image: imageUrl }));
+            } catch (error) {
+              console.error("Upload failed", error);
             }
           }}
           className="w-full p-2 border rounded mb-3"
         />
+
         {form.image && (
-          <img
-            src={`http://localhost:5000${form.image}`}
-            alt="preview"
-            className="w-32 h-32 object-cover border rounded"
-          />
+          <img src={asImg(form.image)} alt="preview" className="w-32 h-32 object-cover border rounded" />
         )}
 
         <input

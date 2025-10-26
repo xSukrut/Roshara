@@ -1,53 +1,82 @@
-// context/CartContext.jsx
 "use client";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const CartContext = createContext();
+export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState([]); // [{_id, name, price, image, qty}]
+  const [coupon, setCoupon] = useState(null); // { code, discountType, value }
+  const [discountAmount, setDiscountAmount] = useState(0);
 
+  // load from storage
   useEffect(() => {
-    const raw = localStorage.getItem("cart");
-    if (raw) setItems(JSON.parse(raw));
+    try {
+      const s = localStorage.getItem("cart");
+      const parsed = s ? JSON.parse(s) : { items: [], coupon: null, discountAmount: 0 };
+      setItems(parsed.items || []);
+      setCoupon(parsed.coupon || null);
+      setDiscountAmount(parsed.discountAmount || 0);
+    } catch {}
   }, []);
 
+  // save to storage
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(items));
-  }, [items]);
+    localStorage.setItem("cart", JSON.stringify({ items, coupon, discountAmount }));
+  }, [items, coupon, discountAmount]);
 
-  const addToCart = (product, qty = 1) => {
+  const addItem = (product, qty = 1) => {
     setItems((prev) => {
-      const idx = prev.findIndex((i) => i._id === product._id);
-      if (idx >= 0) {
+      const i = prev.findIndex((p) => p._id === product._id);
+      if (i > -1) {
         const copy = [...prev];
-        copy[idx].qty += qty;
+        copy[i] = { ...copy[i], qty: copy[i].qty + qty };
         return copy;
-      } else {
-        return [...prev, { ...product, qty }];
       }
+      return [
+        ...prev,
+        {
+          _id: product._id,
+          name: product.name,
+          price: product.price,
+          image: product.images?.[0] || "",
+          qty,
+        },
+      ];
     });
   };
 
-  const updateQty = (productId, qty) => {
-    setItems((prev) => prev.map(i => i._id === productId ? { ...i, qty } : i));
-  };
+  const removeItem = (id) => setItems((prev) => prev.filter((p) => p._id !== id));
 
-  const removeFromCart = (productId) => {
-    setItems(prev => prev.filter(i => i._id !== productId));
-  };
+  const setQty = (id, qty) =>
+    setItems((prev) => prev.map((p) => (p._id === id ? { ...p, qty: Math.max(1, qty) } : p)));
 
   const clearCart = () => {
     setItems([]);
+    setCoupon(null);
+    setDiscountAmount(0);
   };
 
-  const itemsPrice = items.reduce((s, i) => s + (i.price || 0) * (i.qty || 1), 0);
+  const itemsPrice = items.reduce((s, it) => s + it.price * it.qty, 0);
+  const totalAfterDiscount = Math.max(0, itemsPrice - discountAmount);
 
   return (
-    <CartContext.Provider value={{ items, addToCart, updateQty, removeFromCart, clearCart, itemsPrice }}>
+    <CartContext.Provider
+      value={{
+        items,
+        addItem,
+        removeItem,
+        setQty,
+        clearCart,
+        coupon,
+        setCoupon,
+        discountAmount,
+        setDiscountAmount,
+        itemsPrice,
+        totalAfterDiscount,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
 };
-
-export const useCart = () => useContext(CartContext);

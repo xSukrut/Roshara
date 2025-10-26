@@ -15,10 +15,11 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <CartProvider>
             <Navbar />
-            <main>{children}</main>
+            <main className="pt-16">{children}</main>
           </CartProvider>
         </AuthProvider>
       </body>
     </html>
   );
 }
+

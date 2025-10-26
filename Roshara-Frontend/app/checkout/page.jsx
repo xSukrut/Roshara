@@ -1,63 +1,110 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
-import { createOrder } from "../../services/orderService";
+import { createOrder } from "../services/orderService";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const search = useSearchParams();
-  const couponFromQuery = search.get("coupon") || "";
-  const [address, setAddress] = useState({ address: "", city: "", postalCode: "", country: "India" });
-  const { items, itemsPrice, clearCart } = useCart();
-  const [loading, setLoading] = useState(false);
-  const [coupon, setCoupon] = useState(couponFromQuery);
-  const [taxPrice] = useState(0);
-  const [shippingPrice] = useState(0);
+  const { user } = useAuth();
+  const {
+    items,
+    itemsPrice,
+    coupon,
+    clearCart,
+    discountAmount,
+    totalAfterDiscount,
+  } = useCart();
 
-  const handlePlaceOrder = async () => {
-    if (items.length === 0) return alert("Cart empty");
-    const orderItems = items.map(i => ({ product: i._id, quantity: i.qty }));
-    const body = {
-      orderItems,
-      shippingAddress: address,
-      paymentMethod: "cod",
-      taxPrice,
-      shippingPrice,
-      couponCode: coupon || null
-    };
+  const [form, setForm] = useState({
+    address: "",
+    city: "",
+    postalCode: "",
+    country: "",
+  });
+  const [message, setMessage] = useState("");
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      setMessage("Please login first.");
+      return;
+    }
+    if (!items.length) {
+      setMessage("Your cart is empty.");
+      return;
+    }
+
     try {
-      setLoading(true);
-      const data = await createOrder(body);
+      await createOrder({
+        orderItems: items,
+        shippingAddress: form,
+        paymentMethod: "cod", // you can switch later to Razorpay
+        taxPrice: 0,
+        shippingPrice: 0,
+        couponCode: coupon?.code || null,
+      });
+
       clearCart();
-      alert("Order created: " + data._id);
-      router.push(`/order/${data._id}`);
+      router.push("/"); // you can redirect to /orders or success page
     } catch (err) {
-      alert(err.response?.data?.message || err.message);
-    } finally {
-      setLoading(false);
+      setMessage(err.response?.data?.message || "Failed to create order");
     }
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Checkout</h1>
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <h2 className="font-semibold">Shipping Address</h2>
-          <input placeholder="Address" value={address.address} onChange={(e)=>setAddress({...address, address: e.target.value})} className="border p-2 w-full mb-2" />
-          <input placeholder="City" value={address.city} onChange={(e)=>setAddress({...address, city: e.target.value})} className="border p-2 w-full mb-2" />
-          <input placeholder="Postal Code" value={address.postalCode} onChange={(e)=>setAddress({...address, postalCode: e.target.value})} className="border p-2 w-full mb-2" />
-          <input placeholder="Country" value={address.country} onChange={(e)=>setAddress({...address, country: e.target.value})} className="border p-2 w-full mb-2" />
+    <div className="max-w-4xl mx-auto p-6 grid md:grid-cols-2 gap-8">
+      <div>
+        <h1 className="text-2xl font-semibold mb-4">Checkout</h1>
+        <form onSubmit={submit} className="space-y-3">
+          <input
+            className="w-full border rounded p-2"
+            placeholder="Address"
+            value={form.address}
+            onChange={(e) => setForm({ ...form, address: e.target.value })}
+            required
+          />
+          <input
+            className="w-full border rounded p-2"
+            placeholder="City"
+            value={form.city}
+            onChange={(e) => setForm({ ...form, city: e.target.value })}
+            required
+          />
+          <input
+            className="w-full border rounded p-2"
+            placeholder="Postal Code"
+            value={form.postalCode}
+            onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
+            required
+          />
+          <input
+            className="w-full border rounded p-2"
+            placeholder="Country"
+            value={form.country}
+            onChange={(e) => setForm({ ...form, country: e.target.value })}
+            required
+          />
+          {message && <p className="text-sm text-red-600">{message}</p>}
+          <button className="bg-black text-white px-4 py-2 rounded">Place Order</button>
+        </form>
+      </div>
+
+      <div className="border rounded p-4 h-fit sticky top-20">
+        <h2 className="text-xl font-semibold mb-3">Summary</h2>
+        <div className="flex justify-between py-1">
+          <span>Items</span>
+          <span>₹{itemsPrice}</span>
         </div>
-        <div className="p-4 border">
-          <p>Items total: ₹{itemsPrice}</p>
-          <p>Tax: ₹{taxPrice}</p>
-          <p>Shipping: ₹{shippingPrice}</p>
-          <p>Coupon: {coupon || "None"}</p>
-          <button onClick={handlePlaceOrder} disabled={loading} className="mt-4 bg-black text-white px-4 py-2">
-            {loading ? "Placing..." : "Place Order (Pay on delivery)"}
-          </button>
+        <div className="flex justify-between py-1">
+          <span>Discount</span>
+          <span>-₹{discountAmount}</span>
+        </div>
+        <hr className="my-2" />
+        <div className="flex justify-between font-semibold">
+          <span>Total</span>
+          <span>₹{totalAfterDiscount}</span>
         </div>
       </div>
     </div>

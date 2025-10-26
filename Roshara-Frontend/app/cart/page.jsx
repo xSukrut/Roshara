@@ -1,64 +1,134 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 import { useCart } from "../../context/CartContext";
-import { validateCoupon } from "../../services/couponService";
+import { validateCoupon } from "../services/couponService";
+import Link from "next/link";
+
+const imgUrl = (src) => (src?.startsWith("http") ? src : `http://localhost:5000${src}`);
 
 export default function CartPage() {
-  const { items, updateQty, removeFromCart, itemsPrice } = useCart();
-  const [coupon, setCoupon] = useState("");
-  const [discount, setDiscount] = useState(0);
+  const {
+    items,
+    setQty,
+    removeItem,
+    coupon,
+    setCoupon,
+    discountAmount,
+    setDiscountAmount,
+    itemsPrice,
+    totalAfterDiscount,
+  } = useCart();
 
-  const handleValidate = async () => {
+  const [code, setCode] = useState("");
+  const [msg, setMsg] = useState("");
+
+  const apply = async () => {
     try {
-      const res = await validateCoupon(coupon, itemsPrice);
-      let d = 0;
-      if (res.discountType === "percentage") d = Math.round((itemsPrice * res.value) / 100);
-      else d = res.value;
-      setDiscount(d);
-      alert("Coupon valid — discount applied.");
-    } catch (err) {
-      alert(err.response?.data?.message || err.message);
-      setDiscount(0);
+      const res = await validateCoupon(code, itemsPrice);
+      // res = { valid, discountType, value, message }
+      if (!res.valid) {
+        setMsg(res.message || "Invalid coupon");
+        return;
+      }
+      let discount = 0;
+      if (res.discountType === "percentage") discount = Math.round((itemsPrice * res.value) / 100);
+      else discount = res.value;
+
+      setCoupon({ code, discountType: res.discountType, value: res.value });
+      setDiscountAmount(discount);
+      setMsg(res.message || "Applied");
+    } catch (e) {
+      setMsg(e.response?.data?.message || "Invalid coupon");
     }
   };
 
-  const total = Math.max(itemsPrice - discount, 0);
-
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Your Cart</h1>
-      {items.length === 0 ? <p>Your cart is empty. <Link href="/products">Shop now</Link></p> :
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          {items.map(it => (
-            <div key={it._id} className="flex items-center justify-between border-b py-3">
-              <div>
-                <strong>{it.name}</strong><br/>
-                <span>₹{it.price} x {it.qty}</span>
+    <div className="max-w-6xl mx-auto p-6 grid md:grid-cols-3 gap-8">
+      <div className="md:col-span-2">
+        <h1 className="text-2xl font-semibold mb-4">Cart</h1>
+
+        {!items.length ? (
+          <p className="text-gray-500">Your cart is empty.</p>
+        ) : (
+          <div className="space-y-4">
+            {items.map((it) => (
+              <div key={it._id} className="flex items-center gap-4 border p-3 rounded">
+                <div className="w-20 h-20 bg-gray-100 overflow-hidden rounded">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {it.image ? (
+                    <img src={imgUrl(it.image)} alt={it.name} className="w-full h-full object-cover" />
+                  ) : null}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">{it.name}</div>
+                  <div className="text-sm text-gray-600">₹{it.price}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    value={it.qty}
+                    onChange={(e) => setQty(it._id, Number(e.target.value))}
+                    className="w-20 border rounded p-2"
+                  />
+                  <button onClick={() => removeItem(it._id)} className="text-red-600">
+                    Remove
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <input type="number" min="1" value={it.qty} onChange={(e)=> updateQty(it._id, Number(e.target.value))} className="w-16 border p-1"/>
-                <button onClick={()=> removeFromCart(it._id)} className="text-red-600">Remove</button>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="p-4 border">
-          <div>
-            <input value={coupon} onChange={(e)=>setCoupon(e.target.value)} placeholder="Coupon code" className="border p-2 w-full mb-2" />
-            <button onClick={handleValidate} className="bg-black text-white px-3 py-1 w-full">Apply Coupon</button>
+            ))}
           </div>
+        )}
+      </div>
+
+      <div>
+        <div className="border p-4 rounded sticky top-20">
+          <h2 className="text-xl font-semibold mb-3">Summary</h2>
+          <div className="flex justify-between py-1">
+            <span>Subtotal</span>
+            <span>₹{itemsPrice}</span>
+          </div>
+          <div className="flex justify-between py-1">
+            <span>Discount</span>
+            <span>-₹{discountAmount}</span>
+          </div>
+          <hr className="my-2" />
+          <div className="flex justify-between font-semibold">
+            <span>Total</span>
+            <span>₹{totalAfterDiscount}</span>
+          </div>
+
           <div className="mt-4">
-            <p>Subtotal: ₹{itemsPrice}</p>
-            <p>Discount: -₹{discount}</p>
-            <p className="font-bold">Total: ₹{total}</p>
-            <Link href={`/checkout?coupon=${coupon}`}>
-              <button className="bg-green-600 text-white px-4 py-2 w-full mt-4">Proceed to Checkout</button>
-            </Link>
+            <label className="block text-sm mb-1">Coupon</label>
+            <div className="flex gap-2">
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="flex-1 border rounded p-2"
+                placeholder="Enter code"
+              />
+              <button onClick={apply} className="bg-black text-white px-4 rounded">
+                Apply
+              </button>
+            </div>
+            {coupon && (
+              <p className="text-sm text-green-700 mt-2">
+                Applied: <b>{coupon.code}</b>
+              </p>
+            )}
+            {msg && <p className="text-sm text-gray-600 mt-1">{msg}</p>}
           </div>
+
+          <Link
+            href="/checkout"
+            className={`block text-center mt-4 px-4 py-2 rounded ${
+              items.length ? "bg-black text-white" : "bg-gray-300 text-gray-600 pointer-events-none"
+            }`}
+          >
+            Proceed to Checkout
+          </Link>
         </div>
-      </div>}
+      </div>
     </div>
   );
 }
