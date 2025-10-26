@@ -5,7 +5,7 @@ import {
   getMyOrders,
   getAllOrders,
   updateOrderStatus,
-  payOrderSimulated
+  payOrderSimulated,
 } from "../controllers/orderController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
@@ -16,13 +16,12 @@ router.post("/", protect, createOrder);
 router.get("/myorders", protect, getMyOrders);
 router.get("/:id", protect, getOrderById);
 
-// simulate payment success (used for UPI “I’ve paid”)
-router.post("/:id/pay-upi", protect, payOrderSimulated);   
-router.put("/:id/pay", protect, payOrderSimulated);        
+// simulate payment success (UPI “I’ve paid”)
+router.post("/:id/pay-upi", protect, payOrderSimulated);
+router.put("/:id/pay", protect, payOrderSimulated); // alias
 
 // admin
 router.get("/", protect, admin, getAllOrders);
 router.put("/:id/status", protect, admin, updateOrderStatus);
 
 export default router;
-

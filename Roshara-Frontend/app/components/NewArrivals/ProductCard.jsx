@@ -150,7 +150,7 @@ export default function ProductCard({ product, onSearch, className = "" }) {
                   product: product._id,
                   name: product.name,
                   price: product.price,
-                  image: images[0],
+                  image: images?.[0],
                   size: selectedSize,
                 });
                 openMiniCart();

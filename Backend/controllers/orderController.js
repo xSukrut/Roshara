@@ -2,9 +2,10 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Coupon from "../models/Coupon.js";
 
-// create order (customer)
 export const createOrder = async (req, res) => {
   try {
+    console.log("➡️  /api/orders payload:", JSON.stringify(req.body));
+
     const {
       orderItems,
       shippingAddress,
@@ -14,57 +15,79 @@ export const createOrder = async (req, res) => {
       couponCode = null,
     } = req.body;
 
-    if (!orderItems || orderItems.length === 0) {
+    if (!Array.isArray(orderItems) || orderItems.length === 0) {
       return res.status(400).json({ message: "No order items" });
     }
 
-    // compute itemsPrice
-    let itemsPrice = 0;
-    for (const item of orderItems) {
-      const prod = await Product.findById(item.product);
-      if (!prod) return res.status(400).json({ message: `Product ${item.product} not found` });
+    // Normalize: accept product | _id | id + qty
+    const orderItemsNorm = orderItems.map((it) => ({
+      ...it,
+      product: it.product || it._id || it.id,
+      quantity: it.quantity || it.qty || 1,
+    }));
 
-      itemsPrice += prod.price * item.quantity;
+    // Validate each has a product id
+    for (const [i, item] of orderItemsNorm.entries()) {
+      if (!item?.product) {
+        return res
+          .status(400)
+          .json({ message: `Missing product id for item #${i + 1}` });
+      }
+    }
+
+    // Compute itemsPrice and backfill name/price from DB
+    let itemsPrice = 0;
+    for (const item of orderItemsNorm) {
+      const prod = await Product.findById(item.product);
+      if (!prod) {
+        return res
+          .status(400)
+          .json({ message: `Product ${item.product} not found` });
+      }
+      itemsPrice += prod.price * (item.quantity || 1);
       item.name = prod.name;
       item.price = prod.price;
     }
 
-    // apply coupon if provided
+    // Coupon (optional)
     let discountAmount = 0;
     let coupon = null;
 
     if (couponCode) {
-      coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), active: true });
+      coupon = await Coupon.findOne({
+        code: couponCode.toUpperCase(),
+        active: true,
+      });
 
-      if (!coupon) return res.status(400).json({ message: "Invalid or inactive coupon" });
-
+      if (!coupon) {
+        return res.status(400).json({ message: "Invalid or inactive coupon" });
+      }
       if (coupon.expiryDate && coupon.expiryDate < new Date()) {
         return res.status(400).json({ message: "Coupon expired" });
       }
-
       if (coupon.usageLimit > 0 && coupon.usedCount >= coupon.usageLimit) {
         return res.status(400).json({ message: "Coupon usage limit reached" });
       }
-
       if (itemsPrice < coupon.minOrderAmount) {
-        return res.status(400).json({ message: `Minimum order amount for coupon is ₹${coupon.minOrderAmount}` });
+        return res.status(400).json({
+          message: `Minimum order amount for coupon is ₹${coupon.minOrderAmount}`,
+        });
       }
 
-      // calculate discount
       if (coupon.discountType === "percentage") {
         discountAmount = Math.round((itemsPrice * coupon.value) / 100);
       } else {
         discountAmount = coupon.value;
       }
-
       if (discountAmount > itemsPrice) discountAmount = itemsPrice;
     }
 
-    const totalPrice = itemsPrice + Number(taxPrice) + Number(shippingPrice) - discountAmount;
+    const totalPrice =
+      itemsPrice + Number(taxPrice) + Number(shippingPrice) - discountAmount;
 
     const order = new Order({
       user: req.user._id,
-      orderItems,
+      orderItems: orderItemsNorm,
       shippingAddress,
       paymentMethod,
       taxPrice,
@@ -77,7 +100,6 @@ export const createOrder = async (req, res) => {
 
     const created = await order.save();
 
-    // increment coupon usedCount if coupon applied
     if (coupon) {
       coupon.usedCount = (coupon.usedCount || 0) + 1;
       await coupon.save();
@@ -85,20 +107,24 @@ export const createOrder = async (req, res) => {
 
     res.status(201).json(created);
   } catch (err) {
-    console.error(err);
+    console.error("Order create error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-
-// get order by id
 export const getOrderById = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).populate("user", "name email");
+    const order = await Order.findById(req.params.id).populate(
+      "user",
+      "name email"
+    );
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    // allow owner or admin
-    if (order.user._id.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+    // owner or admin only
+    if (
+      order.user._id.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
       return res.status(403).json({ message: "Not authorized" });
     }
     res.json(order);
@@ -107,27 +133,28 @@ export const getOrderById = async (req, res) => {
   }
 };
 
-// get logged-in user orders
 export const getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ user: req.user._id }).sort({
+      createdAt: -1,
+    });
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// get all orders (admin)
 export const getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find().populate("user", "name email").sort({ createdAt: -1 });
+    const orders = await Order.find()
+      .populate("user", "name email")
+      .sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// update order status (admin)
 export const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -145,13 +172,14 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
-// simulate marking order as paid (customer) — useful for testing
+// Simulate marking order as paid for UPI/manual confirmation
 export const payOrderSimulated = async (req, res) => {
   try {
     const { transactionId } = req.body;
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: "Order not found" });
-    if (order.status === "paid") return res.status(400).json({ message: "Order already paid" });
+    if (order.status === "paid")
+      return res.status(400).json({ message: "Order already paid" });
 
     order.status = "paid";
     order.paidAt = Date.now();

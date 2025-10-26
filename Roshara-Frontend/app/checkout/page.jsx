@@ -9,8 +9,16 @@ import { QRCodeCanvas } from "qrcode.react";
 
 export default function CheckoutPage() {
   const { user, token } = useAuth();
-  const { items, itemsPrice, shippingPrice, taxPrice, totalPrice, setQty, removeItem, clear } =
-    useCart();
+  const {
+    items,
+    itemsPrice,
+    shippingPrice,
+    taxPrice,
+    totalPrice,
+    setQty,
+    removeItem,
+    clear,
+  } = useCart();
   const router = useRouter();
 
   const [address, setAddress] = useState({
@@ -19,7 +27,7 @@ export default function CheckoutPage() {
     postalCode: "",
     country: "India",
   });
-  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [paymentMethod, setPaymentMethod] = useState("cod"); // "cod" | "upi"
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
   const [orderId, setOrderId] = useState(null);
@@ -29,7 +37,10 @@ export default function CheckoutPage() {
     if (!user) router.push("/auth/login");
   }, [user, router]);
 
-  // Your static UPI info
+  // Helper: tolerate different id keys coming from the cart
+  const getPid = (it) => it?.product || it?._id || it?.id;
+
+  // Static UPI info (demo)
   const UPI_ID = "roshara@upi";
   const NAME = "Roshara";
 
@@ -43,11 +54,11 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     console.log("🟢 handlePlaceOrder triggered");
-console.log("Token:", token);
-console.log("Items:", items);
+    console.log("Token:", token);
+    console.log("Items:", items);
 
     setError("");
-    if (items.length === 0) {
+    if (!Array.isArray(items) || items.length === 0) {
       setError("Your cart is empty.");
       return;
     }
@@ -58,9 +69,9 @@ console.log("Items:", items);
     setPlacing(true);
     try {
       const orderItems = items.map((it) => ({
-        product: it.product,
+        product: getPid(it),
         name: it.name,
-        quantity: it.qty,
+        quantity: it.qty ?? it.quantity ?? 1,
         price: it.price,
       }));
 
@@ -74,17 +85,16 @@ console.log("Items:", items);
 
       console.log("Sending payload:", payload);
 
-
       const order = await createOrder(token, payload);
 
       if (paymentMethod === "cod") {
         clear();
         router.push(`/order/${order._id}?status=pending`);
       } else {
-        // UPI flow
-        setOrderId(order._id);
+        setOrderId(order._id); // show UPI block
       }
     } catch (e) {
+      console.error(e);
       setError(e?.response?.data?.message || "Failed to place order.");
     } finally {
       setPlacing(false);
@@ -102,22 +112,25 @@ console.log("Items:", items);
       clear();
       router.push(`/order/${orderId}?status=paid`);
     } catch (e) {
+      console.error(e);
       setError(e?.response?.data?.message || "Payment confirmation failed.");
     }
   };
 
+  const keyFor = (it) => getPid(it) || `${it.name}-${Math.random()}`;
+
   return (
     <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8 mt-6">
-      {/* Bag Section */}
+      {/* Bag / Items */}
       <section className="md:col-span-2">
         <h2 className="text-xl font-semibold mb-4">Bag</h2>
 
-        {items.length === 0 ? (
+        {!Array.isArray(items) || items.length === 0 ? (
           <p>Your bag is empty.</p>
         ) : (
           <div className="space-y-4">
             {items.map((it) => (
-              <div key={it.product} className="border rounded p-4 flex gap-4">
+              <div key={keyFor(it)} className="border rounded p-4 flex gap-4">
                 <img
                   src={it.image || "/placeholder.png"}
                   alt={it.name}
@@ -133,12 +146,12 @@ console.log("Items:", items);
                       min="1"
                       value={it.qty}
                       onChange={(e) =>
-                        setQty(it.product, Number(e.target.value))
+                        setQty(getPid(it), Number(e.target.value))
                       }
                       className="w-16 border rounded px-2 py-1"
                     />
                     <button
-                      onClick={() => removeItem(it.product)}
+                      onClick={() => removeItem(getPid(it))}
                       className="text-red-600 text-sm ml-3"
                     >
                       Remove
@@ -150,7 +163,7 @@ console.log("Items:", items);
           </div>
         )}
 
-        {/* Address Section */}
+        {/* Address */}
         <div className="mt-8">
           <h3 className="font-semibold mb-2">Delivery Address</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -187,7 +200,7 @@ console.log("Items:", items);
           </div>
         </div>
 
-        {/* Payment Method */}
+        {/* Payment */}
         <div className="mt-8">
           <h3 className="font-semibold mb-2">Payment Method</h3>
           <div className="space-y-2">
@@ -222,7 +235,7 @@ console.log("Items:", items);
           {placing ? "Placing..." : "Place Order"}
         </button>
 
-        {/* UPI Payment Block */}
+        {/* UPI modal-ish block */}
         {orderId && paymentMethod === "upi" && (
           <div className="mt-6 border rounded p-4 bg-gray-50">
             <h4 className="font-semibold mb-2">Pay via UPI</h4>
