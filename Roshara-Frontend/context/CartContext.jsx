@@ -4,79 +4,93 @@ import { createContext, useContext, useEffect, useState } from "react";
 const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
-export const CartProvider = ({ children }) => {
-  const [items, setItems] = useState([]); // [{_id, name, price, image, qty}]
-  const [coupon, setCoupon] = useState(null); // { code, discountType, value }
-  const [discountAmount, setDiscountAmount] = useState(0);
+export function CartProvider({ children }) {
+  const [items, setItems] = useState([]); // ✅ always an array
+  const [ready, setReady] = useState(false);
 
-  // load from storage
+  // ✅ Load cart from localStorage
   useEffect(() => {
     try {
-      const s = localStorage.getItem("cart");
-      const parsed = s ? JSON.parse(s) : { items: [], coupon: null, discountAmount: 0 };
-      setItems(parsed.items || []);
-      setCoupon(parsed.coupon || null);
-      setDiscountAmount(parsed.discountAmount || 0);
-    } catch {}
+      const stored = localStorage.getItem("cart");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setItems(parsed);
+        } else {
+          setItems([]); // fallback if malformed
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load cart:", err);
+      setItems([]);
+    } finally {
+      setReady(true);
+    }
   }, []);
 
-  // save to storage
+  // ✅ Persist to localStorage whenever items change
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify({ items, coupon, discountAmount }));
-  }, [items, coupon, discountAmount]);
+    if (ready) {
+      localStorage.setItem("cart", JSON.stringify(items));
+    }
+  }, [items, ready]);
 
-  const addItem = (product, qty = 1) => {
+  // ✅ Add an item
+  const addItem = (item, qty = 1) => {
     setItems((prev) => {
-      const i = prev.findIndex((p) => p._id === product._id);
-      if (i > -1) {
-        const copy = [...prev];
-        copy[i] = { ...copy[i], qty: copy[i].qty + qty };
-        return copy;
+      const existing = prev.find((p) => p.product === item.product);
+      if (existing) {
+        return prev.map((p) =>
+          p.product === item.product ? { ...p, qty: p.qty + qty } : p
+        );
       }
-      return [
-        ...prev,
-        {
-          _id: product._id,
-          name: product.name,
-          price: product.price,
-          image: product.images?.[0] || "",
-          qty,
-        },
-      ];
+      return [...prev, { ...item, qty }];
     });
   };
 
-  const removeItem = (id) => setItems((prev) => prev.filter((p) => p._id !== id));
-
-  const setQty = (id, qty) =>
-    setItems((prev) => prev.map((p) => (p._id === id ? { ...p, qty: Math.max(1, qty) } : p)));
-
-  const clearCart = () => {
-    setItems([]);
-    setCoupon(null);
-    setDiscountAmount(0);
+  // ✅ Update quantity
+  const setQty = (productId, qty) => {
+    setItems((prev) =>
+      prev.map((p) =>
+        p.product === productId ? { ...p, qty: Math.max(qty, 1) } : p
+      )
+    );
   };
 
-  const itemsPrice = items.reduce((s, it) => s + it.price * it.qty, 0);
-  const totalAfterDiscount = Math.max(0, itemsPrice - discountAmount);
+  // ✅ Remove one item
+  const removeItem = (productId) => {
+    setItems((prev) => prev.filter((p) => p.product !== productId));
+  };
+
+  // ✅ Clear all
+  const clear = () => setItems([]);
+
+  // ✅ Calculate prices (guard for non-array)
+  const validItems = Array.isArray(items) ? items : [];
+  const itemsPrice = validItems.reduce(
+    (sum, it) => sum + (it.price || 0) * (it.qty || 1),
+    0
+  );
+  const shippingPrice = itemsPrice > 999 ? 0 : 49;
+  const taxPrice = Math.round(itemsPrice * 0.05);
+  const totalPrice = itemsPrice + shippingPrice + taxPrice;
 
   return (
     <CartContext.Provider
       value={{
-        items,
+        items: validItems,
         addItem,
-        removeItem,
         setQty,
-        clearCart,
-        coupon,
-        setCoupon,
-        discountAmount,
-        setDiscountAmount,
+        removeItem,
+        clear,
         itemsPrice,
-        totalAfterDiscount,
+        shippingPrice,
+        taxPrice,
+        totalPrice,
+        ready,
       }}
     >
       {children}
     </CartContext.Provider>
   );
-};
+}

@@ -11,13 +11,18 @@ import { protect, admin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", protect, createOrder);            // create order (customer)
-router.get("/myorders", protect, getMyOrders);     // get logged-in user's orders
-router.get("/:id", protect, getOrderById);         // get single order
-router.put("/:id/pay", protect, payOrderSimulated);// simulate payment (customer)
-router.get("/", protect, admin, getAllOrders);// admin: list all orders
-router.put("/:id/status", protect, admin, updateOrderStatus);// admin: update status
+// customer
+router.post("/", protect, createOrder);
+router.get("/myorders", protect, getMyOrders);
+router.get("/:id", protect, getOrderById);
 
+// simulate payment success (used for UPI “I’ve paid”)
+router.post("/:id/pay-upi", protect, payOrderSimulated);   
+router.put("/:id/pay", protect, payOrderSimulated);        
+
+// admin
+router.get("/", protect, admin, getAllOrders);
+router.put("/:id/status", protect, admin, updateOrderStatus);
 
 export default router;
 

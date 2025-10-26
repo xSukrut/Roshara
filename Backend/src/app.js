@@ -12,6 +12,12 @@ import uploadRoutes from "../routes/uploadRoutes.js";
 
 dotenv.config();
 
+if (!process.env.JWT_SECRET) {
+  console.error("FATAL: JWT_SECRET is not set. Create Backend/.env");
+  process.exit(1);
+}
+
+
 const app = express();
 
 // Middleware to parse JSON
