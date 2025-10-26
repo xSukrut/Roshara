@@ -4,18 +4,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { useCart } from "../../../context/CartContext";
 
 export default function ProductDetails({ product, onClose }) {
   const [selectedSize, setSelectedSize] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [mainImage, setMainImage] = useState("");
+  const { addItem, openMiniCart } = useCart();
 
   // Get color images or fallback to product.images
-  const colorOptions = product.colors || [
-    { name: "Default", images: product.images },
-  ];
-  const selectedColor = colorOptions[selectedColorIndex];
+  const colorOptions =
+    product.colors && product.colors.length > 0
+      ? product.colors
+      : [{ name: "Default", images: product.images || [] }];
+
+  const selectedColor = colorOptions[selectedColorIndex] || colorOptions[0];
 
   // Update main image when color changes
   useEffect(() => {
@@ -45,22 +49,21 @@ export default function ProductDetails({ product, onClose }) {
           {/* LEFT SIDE - IMAGES */}
           <div className="md:w-1/2 bg-gray-50 flex flex-col items-center justify-center p-6">
             {/* Main Image */}
-          {mainImage ? (
-  <Image
-    src={mainImage}
-    alt={product.name}
-    width={400}
-    height={500}
-    className="rounded-lg object-cover"
-  />
-) : (
-  <div className="w-[400px] h-[500px] bg-gray-200 rounded-lg animate-pulse" />
-)}
-
+            {mainImage ? (
+              <Image
+                src={mainImage}
+                alt={product.name}
+                width={400}
+                height={500}
+                className="rounded-lg object-cover"
+              />
+            ) : (
+              <div className="w-[400px] h-[500px] bg-gray-200 rounded-lg animate-pulse" />
+            )}
 
             {/* Thumbnail Images */}
             <div className="flex gap-3 mt-4">
-              {selectedColor.images.slice(0, 4).map((img, idx) => (
+              {selectedColor?.images?.slice(0, 4).map((img, idx) => (
                 <Image
                   key={idx}
                   src={img}
@@ -84,7 +87,6 @@ export default function ProductDetails({ product, onClose }) {
               <h2 className="text-2xl font-bold mt-1">{product.name}</h2>
               <div className="flex items-center gap-2">
                 <span className="text-yellow-500">★ ★ ★ ★ ★</span>
-               
               </div>
 
               {/* Description */}
@@ -165,7 +167,19 @@ export default function ProductDetails({ product, onClose }) {
               <button className="flex-1 bg-black text-white py-3 rounded-xl font-semibold hover:opacity-90">
                 Buy Now
               </button>
-              <button className="flex-1 border border-black py-3 rounded-xl font-semibold hover:bg-gray-100">
+              <button
+                onClick={() => {
+                  addItem({
+                    product: product._id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.images[0],
+                  });
+                  openMiniCart();
+                  onClose();
+                }}
+                className="flex-1 bg-black text-white py-3 rounded-xl font-semibold hover:opacity-90"
+              >
                 Add to Cart
               </button>
               <button className="border p-3 rounded-xl hover:bg-gray-100">

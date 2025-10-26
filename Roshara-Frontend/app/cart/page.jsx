@@ -4,7 +4,8 @@ import { useCart } from "../../context/CartContext";
 import { validateCoupon } from "../../services/couponService";
 import Link from "next/link";
 
-const imgUrl = (src) => (src?.startsWith("http") ? src : `http://localhost:5000${src}`);
+const imgUrl = (src) =>
+  src?.startsWith("http") ? src : `http://localhost:5000${src}`;
 
 export default function CartPage() {
   const {
@@ -31,7 +32,8 @@ export default function CartPage() {
         return;
       }
       let discount = 0;
-      if (res.discountType === "percentage") discount = Math.round((itemsPrice * res.value) / 100);
+      if (res.discountType === "percentage")
+        discount = Math.round((itemsPrice * res.value) / 100);
       else discount = res.value;
 
       setCoupon({ code, discountType: res.discountType, value: res.value });
@@ -51,12 +53,19 @@ export default function CartPage() {
           <p className="text-gray-500">Your cart is empty.</p>
         ) : (
           <div className="space-y-4">
-            {items.map((it) => (
-              <div key={it._id} className="flex items-center gap-4 border p-3 rounded">
+            {items.map((it, idx) => (
+              <div
+                key={it._id ? it._id : idx} // fallback if _id is missing
+                className="flex items-center gap-4 border p-3 rounded"
+              >
                 <div className="w-20 h-20 bg-gray-100 overflow-hidden rounded">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {it.image ? (
-                    <img src={imgUrl(it.image)} alt={it.name} className="w-full h-full object-cover" />
+                    <img
+                      src={imgUrl(it.image)}
+                      alt={it.name}
+                      className="w-full h-full object-cover"
+                    />
                   ) : null}
                 </div>
                 <div className="flex-1">
@@ -71,7 +80,10 @@ export default function CartPage() {
                     onChange={(e) => setQty(it._id, Number(e.target.value))}
                     className="w-20 border rounded p-2"
                   />
-                  <button onClick={() => removeItem(it._id)} className="text-red-600">
+                  <button
+                    onClick={() => removeItem(it._id)}
+                    className="text-red-600"
+                  >
                     Remove
                   </button>
                 </div>
@@ -107,7 +119,10 @@ export default function CartPage() {
                 className="flex-1 border rounded p-2"
                 placeholder="Enter code"
               />
-              <button onClick={apply} className="bg-black text-white px-4 rounded">
+              <button
+                onClick={apply}
+                className="bg-black text-white px-4 rounded"
+              >
                 Apply
               </button>
             </div>
@@ -122,7 +137,9 @@ export default function CartPage() {
           <Link
             href="/checkout"
             className={`block text-center mt-4 px-4 py-2 rounded ${
-              items.length ? "bg-black text-white" : "bg-gray-300 text-gray-600 pointer-events-none"
+              items.length
+                ? "bg-black text-white"
+                : "bg-gray-300 text-gray-600 pointer-events-none"
             }`}
           >
             Proceed to Checkout

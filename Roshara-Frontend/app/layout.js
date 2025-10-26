@@ -2,6 +2,7 @@ import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import { CartProvider } from "../context/CartContext";
 import Navbar from "./components/Navbar";
+import ShowMiniCart from "./components/ShowMiniCart";
 
 export const metadata = {
   title: "Roshara",
@@ -15,6 +16,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <CartProvider>
             <Navbar />
+            <ShowMiniCart />
             <main className="pt-16">{children}</main>
           </CartProvider>
         </AuthProvider>
@@ -22,4 +24,3 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-
