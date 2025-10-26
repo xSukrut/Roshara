@@ -49,7 +49,11 @@ export default function ShowMiniCart() {
                   >
                     <div className="w-16 h-16 relative rounded overflow-hidden bg-gray-100">
                       <Image
-                        src={item.image}
+                        src={
+                          item.image?.startsWith("http")
+                            ? item.image
+                            : `http://localhost:5000${item.image}`
+                        }
                         alt={item.name}
                         fill
                         className="object-cover"

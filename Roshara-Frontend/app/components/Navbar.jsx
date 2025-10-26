@@ -42,13 +42,17 @@ export default function Navbar() {
 
   const isTransparent = isHome && !scrolled;
   const textClass = isTransparent ? "text-white" : "text-black";
-  const hoverClass = isTransparent ? "hover:text-gray-300" : "hover:text-gray-700";
+  const hoverClass = isTransparent
+    ? "hover:text-gray-300"
+    : "hover:text-gray-700";
   const frameClass = isTransparent
     ? "bg-transparent border-transparent"
     : "bg-white/85 backdrop-blur border-gray-200 shadow-sm";
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${frameClass}`}>
+    <nav
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${frameClass}`}
+    >
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-1">
         {/* Logo */}
         <div className="flex items-center">
@@ -65,12 +69,17 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Nav */}
-        <ul className={`hidden md:flex space-x-8 items-center ${textClass}`}>
+        <ul className={`hidden md:flex space-x-4 items-center ${textClass}`}>
           {navLinks.map((link) => {
             const active = pathname === link.path;
             return (
               <li key={link.name} className="relative group">
-                <Link href={link.path} className={`${hoverClass} ${active ? "underline underline-offset-8" : ""}`}>
+                <Link
+                  href={link.path}
+                  className={`${hoverClass} ${
+                    active ? "underline underline-offset-8" : ""
+                  }`}
+                >
                   {link.name}
                 </Link>
               </li>
@@ -81,13 +90,21 @@ export default function Navbar() {
         {/* Icons + Auth (Desktop) */}
         <div className={`hidden md:flex items-center space-x-4 ${textClass}`}>
           {/* Wishlist → /wishlist */}
-          <Link href="/wishlist" className={`relative flex items-center ${hoverClass}`} aria-label="Wishlist">
+          <Link
+            href="/wishlist"
+            className={`relative flex items-center ${hoverClass}`}
+            aria-label="Wishlist"
+          >
             <Heart />
             <span className="ml-2 text-sm">{wishlistCount}</span>
           </Link>
 
           {/* Cart → /cart */}
-          <Link href="/cart" className={`relative flex items-center ${hoverClass}`} aria-label="Cart">
+          <Link
+            href="/cart"
+            className={`relative flex items-center ${hoverClass}`}
+            aria-label="Cart"
+          >
             <ShoppingBag />
             <span className="ml-2 text-sm">{cartCount}</span>
           </Link>
@@ -98,37 +115,66 @@ export default function Navbar() {
               {user.role === "admin" && (
                 <Link
                   href="/admin/dashboard"
-                  className={`px-3 py-1 border rounded ${isTransparent ? "border-white text-white" : "border-black text-black"}`}
+                  className={`px-3 py-1 border rounded ${
+                    isTransparent
+                      ? "border-white text-white"
+                      : "border-black text-black"
+                  }`}
                 >
                   Admin
                 </Link>
               )}
               <button
                 onClick={logout}
-                className={`${isTransparent ? "bg-white text-black" : "bg-black text-white"} px-3 py-1 rounded`}
+                className={`${
+                  isTransparent ? "bg-white text-black" : "bg-black text-white"
+                } px-3 py-1 rounded`}
               >
                 Logout
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <Link href="/auth/login" className={`flex items-center gap-2 ${hoverClass}`}>
+              <Link
+                href="/auth/login"
+                className={`flex items-center gap-2 ${hoverClass}`}
+              >
                 <User />
                 <span className="hidden sm:inline">Login</span>
               </Link>
-              <Link href="/auth/register" className={`text-sm ${hoverClass}`}>Register</Link>
+              <Link href="/auth/register" className={`text-sm ${hoverClass}`}>
+                Register
+              </Link>
             </div>
           )}
         </div>
 
         {/* Mobile toggle */}
         <div className="md:hidden flex items-center">
-          <button onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
-            <svg className={`w-6 h-6 ${textClass}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+          >
+            <svg
+              className={`w-6 h-6 ${textClass}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               {menuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               )}
             </svg>
           </button>

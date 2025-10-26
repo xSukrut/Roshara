@@ -51,7 +51,11 @@ export default function ProductDetails({ product, onClose }) {
             {/* Main Image */}
             {mainImage ? (
               <Image
-                src={mainImage}
+                src={
+                  mainImage?.startsWith("http")
+                    ? mainImage
+                    : `http://localhost:5000${mainImage}`
+                }
                 alt={product.name}
                 width={400}
                 height={500}
@@ -66,7 +70,11 @@ export default function ProductDetails({ product, onClose }) {
               {selectedColor?.images?.slice(0, 4).map((img, idx) => (
                 <Image
                   key={idx}
-                  src={img}
+                  src={
+                    img?.startsWith("http")
+                      ? img
+                      : `http://localhost:5000${img}`
+                  }
                   alt="thumb"
                   width={70}
                   height={70}
@@ -113,7 +121,11 @@ export default function ProductDetails({ product, onClose }) {
                       }`}
                     >
                       <Image
-                        src={color.images[0]}
+                        src={
+                          color.images[0]?.startsWith("http")
+                            ? color.images[0]
+                            : `http://localhost:5000${color.images[0]}`
+                        }
                         alt={color.name}
                         width={40}
                         height={40}

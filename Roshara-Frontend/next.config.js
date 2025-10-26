@@ -10,13 +10,14 @@ const nextConfig = {
         protocol: "https",
         hostname: "res.cloudinary.com", // ✅ if you use Cloudinary
       },
-       {
+      {
         protocol: "https",
         hostname: "example.com", // ✅ added this
       },
       {
-        protocol: "https",
-        hostname: "localhost", // ✅ local dev URLs
+        protocol: "http", // 👈 important — local dev usually runs on http
+        hostname: "localhost",
+        port: "5000", // 👈 your backend port
       },
     ],
   },

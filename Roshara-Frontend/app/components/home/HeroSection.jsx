@@ -17,7 +17,7 @@ export default function HeroSection() {
           className="relative z-10"
         >
           <Image
-            src="/assets/home_model1.png"
+            src="/assets/Tarni_Front2.jpg"
             alt="Left Model"
             width={280}
             height={280}
@@ -30,12 +30,12 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.4 }}
-          className="absolute bottom-10 left-55 z-20 text-left"
+          className="absolute bottom-28 left-65 z-20 text-left"
         >
-          <h1 className="text-[100px] leading-none font-serif text-[#784b3a] drop-shadow-md">
+          <h1 className="text-[100px] leading-none font-serif text-[#4C1417] drop-shadow-md">
             Style
           </h1>
-          <p className="text-lg mt-2 text-gray-700 italic">
+          <p className="text-lg mt-2 text-gray-700 text-left italic">
             That Stays With You
           </p>
         </motion.div>
@@ -51,7 +51,7 @@ export default function HeroSection() {
           className="relative z-10 ml-0"
         >
           <Image
-            src="/assets/home_model22.png"
+            src="/assets/Tarni_Front1.jpg"
             alt="Right Model"
             width={550}
             height={700}
@@ -67,7 +67,7 @@ export default function HeroSection() {
           className="absolute bottom-2 right-94 z-30 flex flex-col items-center"
         >
           <Image
-            src="/assets/home_model3.png"
+            src="/assets/Tarni_Back.JPG"
             alt="Bottom Model"
             width={200}
             height={230}
@@ -80,17 +80,20 @@ export default function HeroSection() {
             <ChevronDown className="animate-bounce mt-1" size={20} />
           </div>
         </motion.div>
-        {/* Vertical Text (ROSHARA) */} 
-        <motion.div 
-        initial={{ opacity: 0, y: 40 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 1, delay: 1 }} 
-        className="absolute right-105 top-4 z-10" > 
-        <Image src="/assets/ROSHARA.png" 
-        alt="ROSHARA Vertical Text" 
-        width={70} 
-        height={70} 
-        className="object-contain" /> 
+        {/* Vertical Text (ROSHARA) */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 1 }}
+          className="absolute right-105 top-4 z-10"
+        >
+          <Image
+            src="/assets/ROSHARA.png"
+            alt="ROSHARA Vertical Text"
+            width={70}
+            height={70}
+            className="object-contain"
+          />
         </motion.div>
 
         {/* Vertical Paragraph Text */}
@@ -101,8 +104,8 @@ export default function HeroSection() {
           className="absolute right-30 top-30 h-100 flex items-center"
         >
           <p className="text-white text-ms tracking-wider leading-relaxed rotate-180 [writing-mode:vertical-rl]">
-            Roshar — Bold prints, unapologetic visuals, and a movement
-            to make India wear its roots with pride.
+            Roshar — Bold prints, unapologetic visuals, and a movement to make
+            India wear its roots with pride.
           </p>
         </motion.div>
       </div>

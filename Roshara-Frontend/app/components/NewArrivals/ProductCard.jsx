@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useCart } from "../../../context/CartContext";
 import { useWishlist } from "../../../context/WishlistContext";
 
-export default function ProductCard({ product, onSearch }) {
+export default function ProductCard({ product, onSearch, className = "" }) {
   const [hovering, setHovering] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
@@ -15,7 +15,8 @@ export default function ProductCard({ product, onSearch }) {
   const { addItem, openMiniCart } = useCart();
   const { toggle, inWishlist } = useWishlist();
 
-  const images = product.images || (product.colors && product.colors[0]?.images) || [];
+  const images =
+    product.images || (product.colors && product.colors[0]?.images) || [];
   if (!images.length) return null;
 
   useEffect(() => {
@@ -32,18 +33,22 @@ export default function ProductCard({ product, onSearch }) {
 
   return (
     <div
-      className="group relative cursor-pointer"
+      className={`group relative cursor-pointer ${className}`}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
       {/* Image */}
       <motion.div
-        className="relative w-full h-[350px] overflow-hidden rounded-2xl shadow-sm"
+        className="relative w-full h-full overflow-hidden rounded-2xl shadow-sm"
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.3 }}
       >
         <Image
-          src={images[currentImage]}
+          src={
+            images[currentImage]?.startsWith("http")
+              ? images[currentImage]
+              : `http://localhost:5000${images[currentImage]}`
+          }
           alt={product.name}
           fill
           className="object-cover transition-all duration-700"
@@ -80,7 +85,9 @@ export default function ProductCard({ product, onSearch }) {
             aria-label="Toggle wishlist"
             title={isFav ? "Remove from wishlist" : "Add to wishlist"}
           >
-            <Heart className={`w-5 h-5 ${isFav ? "text-red-500" : "text-gray-700"}`} />
+            <Heart
+              className={`w-5 h-5 ${isFav ? "text-red-500" : "text-gray-700"}`}
+            />
           </button>
         </div>
       </motion.div>
@@ -100,7 +107,17 @@ export default function ProductCard({ product, onSearch }) {
         >
           {/* Image with blue overlay */}
           <div className="relative w-full h-32 mb-3">
-            <Image src={images[0]} alt={product.name} fill className="object-cover rounded" />
+            <Image
+              src={
+                images[0]?.startsWith("http")
+                  ? images[0]
+                  : `http://localhost:5000${images[0]}`
+              }
+              alt={product.name}
+              fill
+              className="object-cover rounded"
+            />
+
             <div className="absolute inset-0 bg-blue-200/30 rounded"></div>
           </div>
 
@@ -143,7 +160,10 @@ export default function ProductCard({ product, onSearch }) {
             >
               Add
             </button>
-            <button onClick={() => setShowQuickAdd(false)} className="flex-1 border border-gray-400 py-2 rounded">
+            <button
+              onClick={() => setShowQuickAdd(false)}
+              className="flex-1 border border-gray-400 py-2 rounded"
+            >
               Cancel
             </button>
           </div>
