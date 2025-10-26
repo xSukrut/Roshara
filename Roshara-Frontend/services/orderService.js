@@ -1,30 +1,26 @@
-import api from "../../lib/apiClient";
+// app/services/orderService.js
+import api from "../lib/apiClient";
 
-// create order with items + shipping + couponCode (optional)
-export const createOrder = async ({
-  userTokenIsAlreadyOnApi = true,
-  orderItems,
-  shippingAddress,
-  paymentMethod = "cod",
-  taxPrice = 0,
-  shippingPrice = 0,
-  couponCode = null,
-}) => {
-  const payload = {
-    orderItems: orderItems.map((it) => ({
-      product: it._id,
-      quantity: it.qty,
-      // name/price will be filled on backend anyway, but harmless to send
-      name: it.name,
-      price: it.price,
-    })),
-    shippingAddress,
-    paymentMethod,
-    taxPrice,
-    shippingPrice,
-    couponCode,
-  };
-  const res = await api.post("/orders", payload);
+// Create order (authenticated)
+export const createOrder = async (token, payload) => {
+  const res = await api.post("/orders", payload, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data; // returns { _id, ... }
+};
+
+// Get one order (authenticated)
+export const getOrderById = async (token, id) => {
+  const res = await api.get(`/orders/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   return res.data;
 };
 
+// Mark UPI paid (simulated) (authenticated)
+export const markPaidUPI = async (token, id) => {
+  const res = await api.post(`/orders/${id}/pay-upi`, {}, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+};
