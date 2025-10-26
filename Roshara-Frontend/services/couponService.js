@@ -1,4 +1,4 @@
-import api from "../../lib/apiClient";
+import api from "../lib/apiClient";
 
 export const validateCoupon = async (code, orderAmount) => {
   const res = await api.post("/coupons/validate", { code, orderAmount });

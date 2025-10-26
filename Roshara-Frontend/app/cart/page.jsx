@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useCart } from "../../context/CartContext";
-import { validateCoupon } from "../services/couponService";
+import { validateCoupon } from "../../services/couponService";
 import Link from "next/link";
 
 const imgUrl = (src) => (src?.startsWith("http") ? src : `http://localhost:5000${src}`);
