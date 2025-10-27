@@ -1,10 +1,28 @@
 "use client";
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import api from "../lib/apiClient";
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
+
+// Normalize any backend response to a flat { _id, name, email, role, isAdmin, ... }
+const normalizeUser = (raw) => {
+  if (!raw) return null;
+
+  // If backend sent { token, user: {...} } use the nested one
+  const u = raw.user ? raw.user : raw;
+
+  const role = u.role || (u.isAdmin ? "admin" : "customer");
+  return {
+    _id: u._id || u.id || null,
+    name: u.name || "",
+    email: u.email || "",
+    role,
+    isAdmin: u.isAdmin ?? role === "admin",
+    phone: u.phone || "",
+  };
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -16,14 +34,14 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     try {
       const storedToken = localStorage.getItem("token");
-      const storedUser = localStorage.getItem("user");
-
+      const storedUser = localStorage.getItem("user"); // may be raw or nested
       if (storedToken) {
         setToken(storedToken);
         api.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
       }
       if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
-        setUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        setUser(normalizeUser(parsed));
       }
     } catch {
       localStorage.removeItem("token");
@@ -45,14 +63,16 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const res = await axios.post(`${API_URL}/auth/login`, { email, password });
-      const { token, ...userData } = res.data;
 
-      setUser(userData);
+      // Backend shape is { token, user: {...} }
+      const token = res.data?.token;
+      const normalized = normalizeUser(res.data);
+
+      setUser(normalized);
       setToken(token);
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("user", JSON.stringify(normalized));
 
-      // set on api instance too
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
       return { success: true };
@@ -75,3 +95,4 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+

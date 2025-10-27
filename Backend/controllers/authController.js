@@ -1,72 +1,94 @@
-import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import User from "../models/userModel.js";
+import asyncHandler from "express-async-handler";
 
-// Generate JWT token
-const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "30d" });
-};
+// Helper to generate JWT
+const generateToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: "30d",
+  });
 
-//  Register a new customer
-export const registerUser = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+/**
+ * @desc   Register new user
+ * @route  POST /api/auth/register
+ * @access Public
+ */
+export const registerUser = asyncHandler(async (req, res) => {
+  const { name, email, password } = req.body;
 
-    // Check if user already exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    res.status(400);
+    throw new Error("User already exists");
+  }
 
-    // Create new user (password automatically hashed by pre-save hook)
-    const user = await User.create({
-      name,
-      email,
-      password,
-      role: "customer",
-    });
+  const user = await User.create({
+    name,
+    email,
+    password, // hashed automatically by pre-save hook
+  });
 
+  if (user) {
     res.status(201).json({
+      token: generateToken(user._id),
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isAdmin: user.role === "admin",
+      },
+    });
+  } else {
+    res.status(400);
+    throw new Error("Invalid user data");
+  }
+});
+
+/**
+ * @desc   Auth user & get token
+ * @route  POST /api/auth/login
+ * @access Public
+ */
+export const authUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (user && (await user.matchPassword(password))) {
+    res.json({
+      token: generateToken(user._id),
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isAdmin: user.role === "admin",
+      },
+    });
+  } else {
+    res.status(401);
+    throw new Error("Invalid email or password");
+  }
+});
+
+/**
+ * @desc   Get user profile
+ * @route  GET /api/auth/profile
+ * @access Private
+ */
+export const getProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (user) {
+    res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id, user.role),
+      isAdmin: user.role === "admin",
     });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+  } else {
+    res.status(404);
+    throw new Error("User not found");
   }
-};
-
-//  Login user
-export const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Find user by email
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
-
-    // Match password using model method
-    const isMatch = await user.matchPassword(password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
-
-    // Generate token
-    const token = generateToken(user._id, user.role);
-
-    res.status(200).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+});
