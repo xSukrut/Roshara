@@ -1,214 +1,254 @@
-// "use client";
-// import Link from "next/link";
-// import { useCart } from "../../context/CartContext";
-
-// export default function CartPage() {
-//   const {
-//     items,
-//     setQty,
-//     removeItem,
-//     itemsPrice,
-//     shippingPrice,
-//     taxPrice,
-//     totalPrice,
-//   } = useCart();
-
-//   return (
-//     <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-//       <section className="md:col-span-2">
-//         <h1 className="text-2xl font-semibold mb-4">Bag</h1>
-
-//         {items.length === 0 ? (
-//           <div className="text-gray-600">
-//             Your bag is empty.{" "}
-//             <Link href="/shop" className="underline">
-//               Continue shopping
-//             </Link>
-//           </div>
-//         ) : (
-//           <div className="space-y-4">
-//             {items.map((it) => (
-//               <div key={it.product} className="border rounded p-4 flex gap-4">
-//                 <img
-//                   src={
-//                     it.image?.startsWith("http")
-//                       ? it.image
-//                       : `http://localhost:5000${it.image || ""}`
-//                   }
-//                   alt={it.name}
-//                   className="w-20 h-20 object-cover rounded"
-//                 />
-
-//                 <div className="flex-1">
-//                   <div className="font-medium">{it.name}</div>
-//                   <div className="text-sm text-gray-600">₹{it.price}</div>
-//                   <div className="mt-2 flex items-center gap-2">
-//                     <label className="text-sm">Qty</label>
-//                     <input
-//                       type="number"
-//                       min="1"
-//                       value={it.qty}
-//                       onChange={(e) =>
-//                         setQty(it.product, Number(e.target.value))
-//                       }
-//                       className="w-16 border rounded px-2 py-1"
-//                     />
-//                     <button
-//                       onClick={() => removeItem(it.product)}
-//                       className="text-red-600 text-sm ml-3"
-//                     >
-//                       Remove
-//                     </button>
-//                   </div>
-//                 </div>
-//               </div>
-//             ))}
-//           </div>
-//         )}
-//       </section>
-
-//       <aside className="md:col-span-1 border rounded p-4 h-fit">
-//         <h3 className="font-semibold mb-3">Price Details</h3>
-//         <div className="flex justify-between text-sm">
-//           <span>Items Total</span>
-//           <span>₹{itemsPrice}</span>
-//         </div>
-//         <div className="flex justify-between text-sm mt-1">
-//           <span>Shipping</span>
-//           <span>{shippingPrice ? `₹${shippingPrice}` : "FREE"}</span>
-//         </div>
-//         <div className="flex justify-between text-sm mt-1">
-//           <span>Tax (5%)</span>
-//           <span>₹{taxPrice}</span>
-//         </div>
-//         <hr className="my-3" />
-//         <div className="flex justify-between font-semibold">
-//           <span>Total</span>
-//           <span>₹{totalPrice}</span>
-//         </div>
-
-//         <Link
-//           href="/checkout"
-//           className="block text-center mt-4 bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
-//         >
-//           Checkout
-//         </Link>
-//       </aside>
-//     </div>
-//   );
-// }
-
 "use client";
-import Link from "next/link";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCart } from "../../context/CartContext";
+import Image from "next/image";
+import Link from "next/link";
+import { getAllProducts } from "../../services/productService";
 
 export default function CartPage() {
+  const router = useRouter();
   const {
     items,
-    setQty,
     removeItem,
+    setQty,
     itemsPrice,
     shippingPrice,
     taxPrice,
     totalPrice,
+    addItem,
+    openMiniCart,
   } = useCart();
 
-  return (
-    <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-      {/* Bag Section */}
-      <section className="md:col-span-2">
-        <h1 className="text-4xl font-extrabold mb-10 text-[#461518] text-center md:text-left">
-          Your Bag
-        </h1>
+  const [recommendations, setRecommendations] = useState([]);
+  const [recError, setRecError] = useState("");
 
-        {items.length === 0 ? (
-          <div className="text-gray-600 text-lg text-center md:text-left">
-            Your bag is empty.{" "}
-            <Link
-              href="/shop"
-              className="underline text-[#461518] hover:text-[#7f1d1d]"
-            >
-              Continue shopping
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {items.map((it) => (
-              <div
-                key={it.product}
-                className="rounded-2xl p-4 flex gap-4 items-center shadow-md hover:shadow-xl transition-shadow duration-300 bg-gradient-to-black from-pink-100 to-pink-200 overflow-hidden"
-              >
-                <img
-                  src={
-                    it.image?.startsWith("http")
-                      ? it.image
-                      : `http://localhost:5000${it.image || ""}`
-                  }
-                  alt={it.name}
-                  className="w-24 h-24 object-cover rounded-lg hover:scale-105 transition-transform duration-300"
-                />
+  const cartIds = useMemo(
+    () =>
+      new Set(
+        (items || [])
+          .map((it) => it?.product || it?._id || it?.id)
+          .filter(Boolean)
+      ),
+    [items]
+  );
 
-                <div className="flex-1">
-                  <div className="font-semibold text-gray-800 text-lg hover:text-[#7f1d1d] transition-colors duration-300">
-                    {it.name}
-                  </div>
-                  <div className="text-[#7f1d1d] font-medium text-sm mt-1">
-                    ₹{it.price}
-                  </div>
+  // Fetch recommendations (exclude already-in-cart items)
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      try {
+        setRecError("");
+        const all = await getAllProducts();
+        const list = Array.isArray(all) ? all : [];
+        const filtered = list.filter((p) => !cartIds.has(p._id));
+        // Pick up to 4
+        const top = filtered.slice(0, 4);
+        if (!ignore) setRecommendations(top);
+      } catch (e) {
+        if (!ignore) setRecError("Could not load recommendations.");
+        // console.error(e);
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
+  }, [cartIds]);
 
-                  <div className="mt-3 flex items-center gap-3">
-                    <label className="text-sm text-gray-700">Qty</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={it.qty}
-                      onChange={(e) =>
-                        setQty(it.product, Number(e.target.value))
+  const handleCheckout = () => {
+    if (!items || items.length === 0) return;
+    router.push("/checkout");
+  };
+
+  const addRecToCart = (p) => {
+    // try to grab first image if array exists
+    const firstImage =
+      (Array.isArray(p.images) && p.images.length ? p.images[0] : null) ||
+      p.image ||
+      "/placeholder.png";
+
+    addItem({
+      product: p._id,
+      name: p.name,
+      price: p.price,
+      image: firstImage,
+    });
+    if (typeof openMiniCart === "function") openMiniCart();
+  };
+
+  if (!items || items.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 text-center">
+        <h1 className="text-3xl font-semibold mb-4">Your Bag</h1>
+        <p className="text-gray-600 mb-6">Your bag is empty.</p>
+
+        {/* Show recommendations even when empty, if available */}
+        {recommendations.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-semibold mb-4">You might also like</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {recommendations.map((p) => (
+                <div key={p._id} className="border rounded-lg p-3">
+                  <div className="relative w-full h-40 mb-2 overflow-hidden rounded">
+                    <Image
+                      src={
+                        (Array.isArray(p.images) && p.images[0]) ||
+                        p.image ||
+                        "/placeholder.png"
                       }
-                      className="w-20 border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                      alt={p.name}
+                      fill
+                      className="object-cover"
                     />
-                    <button
-                      onClick={() => removeItem(it.product)}
-                      className="text-red-600 text-sm font-medium hover:underline"
-                    >
-                      Remove
-                    </button>
                   </div>
+                  <div className="text-sm font-medium">{p.name}</div>
+                  <div className="text-sm text-gray-600">₹{p.price}</div>
+                  <button
+                    onClick={() => addRecToCart(p)}
+                    className="mt-2 w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition text-sm"
+                  >
+                    Add to Bag
+                  </button>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
+
+        <Link
+          href="/shop"
+          className="inline-block mt-8 bg-black text-white px-5 py-3 rounded hover:bg-gray-800 transition"
+        >
+          Continue Shopping
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
+      {/* Left — Bag Items */}
+      <section className="md:col-span-2">
+        <h1 className="text-3xl font-semibold mb-6">Your Bag</h1>
+        <div className="space-y-4">
+          {items.map((it) => {
+            const pid = it.product || it._id;
+            return (
+              <div
+                key={pid}
+                className="flex items-center justify-between border rounded-lg p-4 shadow-sm"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="relative w-20 h-20">
+                    <Image
+                      src={it.image || "/placeholder.png"}
+                      alt={it.name}
+                      fill
+                      className="rounded object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">{it.name}</h3>
+                    <p className="text-sm text-gray-600">₹{it.price}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <label className="text-sm">Qty:</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={it.qty}
+                        onChange={(e) => setQty(pid, Number(e.target.value))}
+                        className="w-16 border rounded px-2 py-1 text-center"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => removeItem(pid)}
+                  className="text-red-600 hover:underline text-sm"
+                >
+                  Remove
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Recommendations under the cart items (desktop & mobile) */}
+        <div className="mt-10">
+          <h2 className="text-2xl font-semibold mb-4">You might also like</h2>
+          {recError && (
+            <p className="text-sm text-red-600 mb-2">{recError}</p>
+          )}
+          {recommendations.length === 0 ? (
+            <p className="text-gray-600">We’ll show suggestions here soon.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {recommendations.map((p) => (
+                <div key={p._id} className="border rounded-lg p-3">
+                  <div className="relative w-full h-40 mb-2 overflow-hidden rounded">
+                    <Image
+                      src={
+                        (Array.isArray(p.images) && p.images[0]) ||
+                        p.image ||
+                        "/placeholder.png"
+                      }
+                      alt={p.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="text-sm font-medium">{p.name}</div>
+                  <div className="text-sm text-gray-600">₹{p.price}</div>
+                  <button
+                    onClick={() => addRecToCart(p)}
+                    className="mt-2 w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition text-sm"
+                  >
+                    Add to Bag
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
-      {/* Price Summary */}
-      <aside className="md:col-span-1 rounded-2xl p-6 shadow-lg bg-gradient-to-black from-pink-50 to-pink-200">
-        <h3 className="font-semibold text-lg mb-4 text-[#461518]">
-          Price Details
-        </h3>
-        <div className="flex justify-between text-[#7f1d1d] text-sm mb-1">
-          <span>Items Total</span>
+      {/* Right — Summary */}
+      <aside className="border rounded-lg p-6 h-fit shadow-md">
+        <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+        <div className="flex justify-between mb-2">
+          <span>Subtotal</span>
           <span>₹{itemsPrice}</span>
         </div>
-        <div className="flex justify-between text-[#7f1d1d] text-sm mb-1">
+        <div className="flex justify-between mb-2">
           <span>Shipping</span>
           <span>{shippingPrice ? `₹${shippingPrice}` : "FREE"}</span>
         </div>
-        <div className="flex justify-between text-[#7f1d1d] text-sm mb-2">
-          <span>Tax (5%)</span>
+        <div className="flex justify-between mb-2">
+          <span>Tax</span>
           <span>₹{taxPrice}</span>
         </div>
-        <hr className="my-3 border-[#f5c2c7]" />
-        <div className="flex justify-between font-semibold text-[#461518] text-lg mb-4">
+        <hr className="my-3" />
+        <div className="flex justify-between font-semibold text-lg mb-4">
           <span>Total</span>
           <span>₹{totalPrice}</span>
         </div>
 
-        <Link
-          href="/checkout"
-          className="block text-center mt-4 px-4 py-3 rounded-2xl font-semibold text-white bg-gradient-to-red from-pink-500 to-pink-700 hover:from-pink-600 hover:to-pink-800 transition-all duration-300"
+        {/* Checkout Button */}
+        <button
+          onClick={handleCheckout}
+          className="w-full bg-black text-white py-3 rounded hover:bg-gray-800 transition disabled:opacity-50"
+          disabled={!items || items.length === 0}
         >
-          Checkout
+          Proceed to Checkout
+        </button>
+
+        {/* Continue Shopping */}
+        <Link
+          href="/shop"
+          className="block w-full text-center mt-3 py-2 border border-black rounded hover:bg-gray-100 transition"
+        >
+          Continue Shopping
         </Link>
       </aside>
     </div>
