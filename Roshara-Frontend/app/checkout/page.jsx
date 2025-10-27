@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { createOrder, markPaidUPI } from "../services/orderService";
-import { QRCodeCanvas } from "qrcode.react";
+import Image from "next/image"; 
+
 
 export default function CheckoutPage() {
   const { user, token } = useAuth();
@@ -235,44 +236,53 @@ export default function CheckoutPage() {
           {placing ? "Placing..." : "Place Order"}
         </button>
 
-        {/* UPI modal-ish block */}
-        {orderId && paymentMethod === "upi" && (
-          <div className="mt-6 border rounded p-4 bg-gray-50">
-            <h4 className="font-semibold mb-2">Pay via UPI</h4>
-            <div className="flex flex-col sm:flex-row gap-6 items-start">
-              <QRCodeCanvas value={upiString} size={160} />
-              <div>
-                <a
-                  href={upiString}
-                  className="inline-block bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
-                >
-                  Open UPI App
-                </a>
-                <p className="text-sm text-gray-600 mt-2">
-                  UPI ID: <b>{UPI_ID}</b> &nbsp; | &nbsp; Amount: ₹{totalPrice}
-                </p>
-                <div className="mt-4">
-                  <label className="text-sm font-medium block mb-1">
-                    Enter UPI Transaction ID
-                  </label>
-                  <input
-                    type="text"
-                    value={transactionId}
-                    onChange={(e) => setTransactionId(e.target.value)}
-                    placeholder="Example: T1234ABCD567"
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-                <button
-                  onClick={handleMarkPaid}
-                  className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                >
-                  I’ve Paid
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+       {/* UPI block */}
+{orderId && paymentMethod === "upi" && (
+  <div className="mt-8 border rounded-xl p-6 bg-gray-50 shadow-sm max-w-md">
+    <h4 className="font-semibold text-lg mb-4 text-center">Pay via UPI</h4>
+
+    {/* QR Image */}
+    <div className="flex flex-col items-center">
+      <Image
+        src="/MyUpiQR.png"
+        alt="UPI QR Code"
+        width={200}
+        height={200}
+        className="rounded-xl border mb-4"
+      />
+
+      <div className="text-center text-gray-700 mb-2">
+        <p className="font-medium">
+          <span className="text-gray-600">UPI ID:</span> <b>roshara@upi</b>
+        </p>
+        <p>
+          <span className="text-gray-600">Amount:</span> ₹{totalPrice}
+        </p>
+      </div>
+
+      <div className="mt-4 w-full">
+        <label className="text-sm font-medium block mb-1">
+          Enter UPI Transaction ID
+        </label>
+        <input
+          type="text"
+          value={transactionId}
+          onChange={(e) => setTransactionId(e.target.value)}
+          placeholder="Example: T1234ABCD567"
+          className="w-full border rounded-lg px-3 py-2"
+        />
+      </div>
+
+      <button
+        onClick={handleMarkPaid}
+        className="mt-5 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
+      >
+        I’ve Paid
+      </button>
+    </div>
+  </div>
+)}
+
       </section>
 
       {/* Price details */}
@@ -285,10 +295,6 @@ export default function CheckoutPage() {
         <div className="flex justify-between text-sm mt-1">
           <span>Shipping</span>
           <span>{shippingPrice ? `₹${shippingPrice}` : "FREE"}</span>
-        </div>
-        <div className="flex justify-between text-sm mt-1">
-          <span>Tax (5%)</span>
-          <span>₹{taxPrice}</span>
         </div>
         <hr className="my-3" />
         <div className="flex justify-between font-semibold">
