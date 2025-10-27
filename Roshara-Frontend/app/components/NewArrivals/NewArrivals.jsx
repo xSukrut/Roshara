@@ -50,7 +50,7 @@ export default function NewArrivals() {
     <section className="p-8 ">
       {/* Heading and View All button in one row */}
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-2xl font-bold">New Arrivals</h2>
+        <h2 className="text-3xl font-bold text-center mb-6">New Arrivals</h2>
         <Link
           href="/new-arrivals"
           className="bg-black text-white px-5 py-2 rounded hover:bg-gray-800 transition"

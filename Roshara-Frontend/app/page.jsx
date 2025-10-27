@@ -12,7 +12,6 @@ export default function HomePage() {
 
       {/* New Arrivals */}
       <section className="max-w-7xl mx-auto px-4 py-12">
-        <h2 className="text-2xl font-semibold mb-6">New Arrivals</h2>
         <NewArrivals />
       </section>
     </div>
