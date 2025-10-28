@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
-import { createOrder, markPaidUPI } from "../services/orderService";
+import { createOrder, submitUpiProof } from "../services/orderService";
 import Image from "next/image"; 
 
 
@@ -102,21 +102,20 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleMarkPaid = async () => {
-    if (!transactionId.trim()) {
-      setError("Please enter your UPI Transaction ID.");
-      return;
-    }
-
-    try {
-      await markPaidUPI(token, orderId, transactionId);
-      clear();
-      router.push(`/order/${orderId}?status=paid`);
-    } catch (e) {
-      console.error(e);
-      setError(e?.response?.data?.message || "Payment confirmation failed.");
-    }
-  };
+ const handleMarkPaid = async () => {
+  if (!transactionId.trim()) {
+    setError("Please enter your UPI Transaction ID.");
+    return;
+  }
+  try {
+    await submitUpiProof(token, orderId, transactionId);
+    // Keep order awaiting verification
+    router.push(`/order/${orderId}?status=pending_verification`);
+  } catch (e) {
+    console.error(e);
+    setError(e?.response?.data?.message || "Payment submission failed.");
+  }
+};
 
   const keyFor = (it) => getPid(it) || `${it.name}-${Math.random()}`;
 

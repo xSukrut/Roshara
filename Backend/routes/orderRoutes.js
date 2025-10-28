@@ -1,11 +1,13 @@
 import express from "express";
 import {
   createOrder,
+  submitUpiProof,
   getOrderById,
   getMyOrders,
-  getAllOrders,
+  getAllOrdersAdmin,
+  verifyOrderPayment,
   updateOrderStatus,
-  payOrderSimulated,
+  payOrderSimulated, // optional
 } from "../controllers/orderController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
@@ -13,15 +15,18 @@ const router = express.Router();
 
 // customer
 router.post("/", protect, createOrder);
-router.get("/myorders", protect, getMyOrders);
+router.get("/my", protect, getMyOrders);
 router.get("/:id", protect, getOrderById);
 
-// simulate payment success (UPI “I’ve paid”)
-router.post("/:id/pay-upi", protect, payOrderSimulated);
-router.put("/:id/pay", protect, payOrderSimulated); // alias
+// customer submits UPI proof (txn id)
+router.post("/:id/upi-proof", protect, submitUpiProof);
 
 // admin
-router.get("/", protect, admin, getAllOrders);
+router.get("/", protect, admin, getAllOrdersAdmin);
+router.put("/:id/verify", protect, admin, verifyOrderPayment);
 router.put("/:id/status", protect, admin, updateOrderStatus);
+
+// dev/test
+router.put("/:id/pay-simulated", protect, admin, payOrderSimulated);
 
 export default router;

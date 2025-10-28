@@ -1,46 +1,65 @@
 import mongoose from "mongoose";
 
 const orderItemSchema = new mongoose.Schema({
-  product: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Product", required: true },
-  name: {
-    type: String, required: true },
-  quantity: {
-    type: Number, required: true },
-  price: {
-    type: Number, required: true }, // price per unit at time of order
+  product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
+  name: { type: String, required: true },
+  quantity: { type: Number, required: true },
+  price: { type: Number, required: true }, // price per unit at time of order
 });
 
-const orderSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User", required: true },
-  orderItems: [orderItemSchema],
-  shippingAddress: {
-    address: { type: String },
-    city: { type: String },
-    postalCode: { type: String },
-    country: { type: String },
+const upiSchema = new mongoose.Schema(
+  {
+    txnId: String,
+    submittedAt: Date,
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    verifiedAt: Date,
   },
-  paymentMethod: {
-    type: String, required: true }, // "stripe", "razorpay", "cod", etc.
-  paymentResult: {
-    id: String,
-    status: String,
-    update_time: String,
-    email_address: String,
+  { _id: false }
+);
+
+const orderSchema = new mongoose.Schema(
+  {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    orderItems: [orderItemSchema],
+    shippingAddress: {
+      address: String,
+      city: String,
+      postalCode: String,
+      country: String,
+    },
+    paymentMethod: { type: String, required: true }, // "upi", "cod", etc.
+    paymentResult: {
+      id: String,
+      status: String,
+      update_time: String,
+      email_address: String,
+    },
+    taxPrice: { type: Number, default: 0 },
+    shippingPrice: { type: Number, default: 0 },
+    itemsPrice: { type: Number, default: 0 },
+    discountAmount: { type: Number, default: 0 },
+    totalPrice: { type: Number, default: 0 },
+
+    // NEW: keep main status + payment status in sync
+    status: {
+      type: String,
+      enum: ["pending", "pending_verification", "paid", "shipped", "cancelled", "rejected"],
+      default: "pending",
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "pending_verification", "paid", "rejected"],
+      default: "pending",
+    },
+
+    upi: upiSchema,      
+    adminNote: String,   
+
+    paidAt: Date,
+    shippedAt: Date,
   },
-  taxPrice: { type: Number, default: 0 },
-  shippingPrice: { type: Number, default: 0 },
-  itemsPrice: { type: Number, default: 0 }, // sum of price*quantity
-  discountAmount: { type: Number, default: 0 },
-  totalPrice: { type: Number, default: 0 }, // itemsPrice + tax + shipping - discount
-  status: { type: String, enum: ["pending", "paid", "shipped", "cancelled"], default: "pending" },
-  paidAt: Date,
-  shippedAt: Date,
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 const Order = mongoose.model("Order", orderSchema);
 export default Order;
-
