@@ -183,7 +183,8 @@ import { useCart } from "../../../context/CartContext";
 
 // helper: ensure full URL for /uploads paths
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") ||
+  "http://localhost:5000";
 const urlFor = (src) => {
   if (!src) return "/placeholder.png";
   if (src.startsWith("http")) return src;
@@ -206,10 +207,15 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
       if (Array.isArray(w)) setWish(w);
     } catch {}
   }, []);
-  const inWishlist = useMemo(() => wish.includes(product._id), [wish, product?._id]);
+  const inWishlist = useMemo(
+    () => wish.includes(product._id),
+    [wish, product?._id]
+  );
   const toggleWishlist = () => {
     setWish((prev) => {
-      const next = inWishlist ? prev.filter((id) => id !== product._id) : [...prev, product._id];
+      const next = inWishlist
+        ? prev.filter((id) => id !== product._id)
+        : [...prev, product._id];
       localStorage.setItem("wishlist", JSON.stringify(next));
       return next;
     });
@@ -233,22 +239,25 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
   useEffect(() => {
     let t;
     if (hovering && images.length > 1) {
-      t = setInterval(() => setCurrentImage((p) => (p + 1) % images.length), 600);
+      t = setInterval(
+        () => setCurrentImage((p) => (p + 1) % images.length),
+        600
+      );
     }
     return () => clearInterval(t);
   }, [hovering, images.length]);
 
   // size options
- const sizeOptions =
-  Array.isArray(product?.sizes) && product.sizes.length
-    ? product.sizes
-    : ROSHARA_SIZES;
+  const sizeOptions =
+    Array.isArray(product?.sizes) && product.sizes.length
+      ? product.sizes
+      : ROSHARA_SIZES;
 
   // NEW: height presets
   const heightClass =
     size === "lg"
       ? "h-[420px] md:h-[460px]" // taller cards for Shop All
-      : "h-[350px]";             // default everywhere else
+      : "h-[350px]"; // default everywhere else
 
   return (
     <div
@@ -259,13 +268,13 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
       <motion.div
         className={`relative w-full ${heightClass} overflow-hidden rounded-2xl shadow-sm`}
         whileHover={{ scale: 1.02 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.2 }}
       >
         <Image
           src={images[currentImage]}
           alt={product.name}
           fill
-          className="object-cover transition-all duration-700"
+          className="object-cover transition-all duration-800"
           sizes="(max-width: 768px) 100vw, 33vw"
         />
 
@@ -318,7 +327,12 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
           className="absolute top-0 right-0 w-56 bg-white shadow-xl rounded p-4 z-50"
         >
           <div className="relative w-full h-32 mb-3">
-            <Image src={images[0]} alt={product.name} fill className="object-cover rounded" />
+            <Image
+              src={images[0]}
+              alt={product.name}
+              fill
+              className="object-cover rounded"
+            />
             <div className="absolute inset-0 bg-blue-200/30 rounded" />
           </div>
 

@@ -9,37 +9,84 @@ export default function ContactForm({ email }) {
     const message = (data.get("message") || "").toString().trim();
 
     const subject = encodeURIComponent(`Message from ${name}`);
-    const body = encodeURIComponent(`Name: ${name}\nEmail: ${from}\n\nMessage:\n${message}`);
+    const body = encodeURIComponent(
+      `Name: ${name}\nEmail: ${from}\n\nMessage:\n${message}`
+    );
 
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   };
 
+  // return (
+  //   <form
+  //     onSubmit={handleSubmit}
+  //     className="max-w-2xl border rounded-xl p-5 space-y-4"
+  //   >
+  //     <input
+  //       name="name"
+  //       type="text"
+  //       placeholder="Name"
+  //       className="w-full border rounded-md px-3 py-2"
+  //       required
+  //     />
+  //     <input
+  //       name="email"
+  //       type="email"
+  //       placeholder="Email"
+  //       className="w-full border rounded-md px-3 py-2"
+  //       required
+  //     />
+  //     <textarea
+  //       name="message"
+  //       placeholder="Message"
+  //       rows={6}
+  //       className="w-full border rounded-md px-3 py-2"
+  //       required
+  //     />
+  //     <button
+  //       type="submit"
+  //       className="w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition"
+  //     >
+  //       Send Message
+  //     </button>
+  //   </form>
+  // );
+
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl border rounded-xl p-5 space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-xl mx-auto  bg-linear-to-br from-[#FBFAE8] to-white border border-amber-100 rounded-2xl p-8 space-y-6"
+    >
+      {/* Name Input */}
       <input
         name="name"
         type="text"
         placeholder="Name"
-        className="w-full border rounded-md px-3 py-2"
+        className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#481617] focus:border-[#481617]  transition duration-200 ease-in-out"
         required
       />
+
+      {/* Email Input */}
       <input
         name="email"
         type="email"
         placeholder="Email"
-        className="w-full border rounded-md px-3 py-2"
+        className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#481617] focus:border-[#481617]  transition duration-200 ease-in-out"
         required
       />
+
+      {/* Message Textarea */}
       <textarea
         name="message"
         placeholder="Message"
         rows={6}
-        className="w-full border rounded-md px-3 py-2"
+        className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#481617] focus:border-[#481617] transition duration-200 ease-in-out resize-none"
         required
       />
+
+      {/* Submit Button */}
       <button
         type="submit"
-        className="w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition"
+        className="w-full bg-[#5f1f20] text-white font-semibold py-3 rounded-xl shadow-md hover:bg-[#481617] focus:outline-none focus:ring-4 focus:ring-gray-500 focus:ring-opacity-50 transition duration-300 ease-in-out transform hover:scale-[1.01]"
       >
         Send Message
       </button>

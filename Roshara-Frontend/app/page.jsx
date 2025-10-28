@@ -11,7 +11,7 @@ export default function HomePage() {
       <HeroSection />
 
       {/* New Arrivals */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
+      <section className="max-w-8xl bg-[#F8F5F0] mx-auto px-4 py-12">
         <NewArrivals />
       </section>
     </div>

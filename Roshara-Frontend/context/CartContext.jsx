@@ -33,20 +33,21 @@ export function CartProvider({ children }) {
     save(items);
   }, [items]);
 
-  // Add item; if same product+size exists, bump qty; else push
   const addItem = ({ product, name, price, image, size, qty = 1 }) => {
     if (!product) return;
+
+    const productId = typeof product === "object" ? product._id : product;
 
     setItems((prev) => {
       const next = [...prev];
       const idx = next.findIndex(
-        (it) => it.product === product && (it.size || null) === (size || null)
+        (it) => it.product === productId && (it.size || null) === (size || null)
       );
       if (idx >= 0) {
         next[idx] = { ...next[idx], qty: (next[idx].qty || 1) + qty };
       } else {
         next.push({
-          product,
+          product: productId,
           name,
           price: Number(price),
           image,
@@ -69,12 +70,13 @@ export function CartProvider({ children }) {
     );
   };
 
-  // Remove a line by product + size
-  const removeItem = (product, size) => {
+  const removeItem = (product, size = null) => {
+    const productId = typeof product === "object" ? product._id : product;
+
     setItems((prev) =>
       prev.filter(
         (it) =>
-          !(it.product === product && (it.size || null) === (size || null))
+          !(it.product === productId && (it.size || null) === (size || null))
       )
     );
   };

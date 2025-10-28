@@ -98,38 +98,91 @@
 //   );
 // }
 
+// "use client";
+
+// import Link from "next/link";
+
+// export default function Page({ product, size = "md" }) {
+//   if (!product) return null;
+
+//   const img =
+//     (Array.isArray(product.images) && product.images[0]) ||
+//     product.image ||
+//     "/placeholder.png";
+
+//   const heightClass = size === "lg" ? "h-[420px] md:h-[460px]" : "h-[350px]";
+
+//   return (
+//     <Link
+//       href={`/product/${product._id}`}
+//       className="group block"
+//       aria-label={product.name}
+//     >
+//       <div
+//         className={`relative w-full ${heightClass} rounded-2xl overflow-hidden border border-gray-200`}
+//       >
+//         <img
+//           src={img}
+//           alt={product.name}
+//           className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+//         />
+//       </div>
+
+//       <div className="mt-3 text-center">
+//         <h3 className="font-semibold text-gray-800 line-clamp-2">
+//           {product.name}
+//         </h3>
+//         <p className="text-gray-900 font-semibold">
+//           ₹{Number(product.price).toLocaleString("en-IN")}
+//         </p>
+//       </div>
+//     </Link>
+//   );
+// }
+
 "use client";
 
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getAllProducts } from "../../services/productService";
+import ProductCard from "../components/NewArrivals/ProductCard.jsx";
+import ProductDetail from "../admin/products/[id]/page.jsx";
 
-export default function ProductCard({ product, size = "md" }) {
-  if (!product) return null;
+export default function AllNewArrivals() {
+  const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const img =
-    (Array.isArray(product.images) && product.images[0]) ||
-    product.image ||
-    "/placeholder.png";
-
-  const heightClass = size === "lg" ? "h-[420px] md:h-[460px]" : "h-[350px]";
+  useEffect(() => {
+    getAllProducts().then(setProducts).catch(console.error);
+  }, []);
 
   return (
-    <Link
-      href={`/product/${product._id}`} // if you use slugs, change to /product/${product.slug}
-      className="group block"
-      aria-label={product.name}
-    >
-      <div className={`relative w-full ${heightClass} rounded-2xl overflow-hidden border border-gray-200`}>
-        <img
-          src={img}
-          alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-        />
+    <section className="p-8">
+      <div className="text-center mb-10">
+        <h2 className="text-4xl font-bold">All New Arrivals</h2>
+        <p className="text-gray-600 mt-2">
+          Explore the latest additions to our collection
+        </p>
       </div>
 
-      <div className="mt-3 text-center">
-        <h3 className="font-semibold text-gray-800 line-clamp-2">{product.name}</h3>
-        <p className="text-gray-900 font-semibold">₹{Number(product.price).toLocaleString("en-IN")}</p>
+      {/* Product grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {products.map((p) => (
+          <ProductCard
+            key={p._id}
+            product={p}
+            onSearch={setSelectedProduct} // opens modal
+            size="lg"
+          />
+        ))}
       </div>
-    </Link>
+
+      {/* Product details modal */}
+      {selectedProduct && (
+        <ProductDetail
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
+    </section>
   );
 }
