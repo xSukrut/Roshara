@@ -99,49 +99,37 @@
 // }
 
 "use client";
-import { useEffect, useState } from "react";
-import api from "../../lib/apiClient.js";
-import ProductCard from "../components/NewArrivals/ProductCard.jsx";
-import ProductDetails from "../components/NewArrivals/ProductDetails";
 
-export default function NewArrivalsPage() {
-  const [products, setProducts] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+import Link from "next/link";
 
-  useEffect(() => {
-    api
-      .get("/products")
-      .then((res) => setProducts(res.data))
-      .catch(() => setProducts([]));
-  }, []);
+export default function ProductCard({ product, size = "md" }) {
+  if (!product) return null;
 
-  const handleQuickView = (product) => setSelectedProduct(product);
-  const handleClose = () => setSelectedProduct(null);
+  const img =
+    (Array.isArray(product.images) && product.images[0]) ||
+    product.image ||
+    "/placeholder.png";
 
-  if (!products.length)
-    return <p className="text-gray-500 text-center">No products yet.</p>;
+  const heightClass = size === "lg" ? "h-[420px] md:h-[460px]" : "h-[350px]";
 
   return (
-    <section className="p-8">
-      <h1 className="text-4xl font-extrabold mb-10 text-center text-[#461518]">
-        New Arrivals
-      </h1>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-y-18 gap-x-10">
-        {products.map((product) => (
-          <ProductCard
-            key={product._id}
-            product={product}
-            onSearch={handleQuickView}
-            className="w-full h-100" // full width of the grid cell
-          />
-        ))}
+    <Link
+      href={`/product/${product._id}`} // if you use slugs, change to /product/${product.slug}
+      className="group block"
+      aria-label={product.name}
+    >
+      <div className={`relative w-full ${heightClass} rounded-2xl overflow-hidden border border-gray-200`}>
+        <img
+          src={img}
+          alt={product.name}
+          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+        />
       </div>
 
-      {/* Quick View Overlay */}
-      {selectedProduct && (
-        <ProductDetails product={selectedProduct} onClose={handleClose} />
-      )}
-    </section>
+      <div className="mt-3 text-center">
+        <h3 className="font-semibold text-gray-800 line-clamp-2">{product.name}</h3>
+        <p className="text-gray-900 font-semibold">₹{Number(product.price).toLocaleString("en-IN")}</p>
+      </div>
+    </Link>
   );
 }

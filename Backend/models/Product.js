@@ -1,11 +1,16 @@
 import mongoose from "mongoose";
+import { ROSHARA_SIZES } from "../constants/sizes.js";
+
 
 const productSchema = new mongoose.Schema(
     {
         name: { type: String, required: true },
         description: { type: String },
         price: { type: Number, required: true },
-        sizes: [String],
+        sizes: {
+            type: [String],
+            default: ROSHARA_SIZES
+        },
         colors: [String],
         images: [String],
         stock: { type: Number, default: 0},

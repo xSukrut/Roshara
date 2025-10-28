@@ -175,6 +175,7 @@
 
 "use client";
 import { motion } from "framer-motion";
+import { ROSHARA_SIZES } from "../../constants/sizes";
 import Image from "next/image";
 import { Search, ShoppingCart, Heart } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
@@ -238,7 +239,10 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
   }, [hovering, images.length]);
 
   // size options
-  const sizeOptions = product?.sizes?.length ? product.sizes : ["XS", "S", "M", "L", "XL"];
+ const sizeOptions =
+  Array.isArray(product?.sizes) && product.sizes.length
+    ? product.sizes
+    : ROSHARA_SIZES;
 
   // NEW: height presets
   const heightClass =
