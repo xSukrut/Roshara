@@ -1,11 +1,12 @@
+// context/WishlistContext.jsx
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const WishlistContext = createContext();
 export const useWishlist = () => useContext(WishlistContext);
 
 export function WishlistProvider({ children }) {
-  const [items, setItems] = useState([]); // [{product, name, price, image, ...}]
+  const [items, setItems] = useState([]);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -23,17 +24,18 @@ export function WishlistProvider({ children }) {
     if (ready) localStorage.setItem("wishlist", JSON.stringify(items));
   }, [items, ready]);
 
-  const inWishlist = (productId) => items.some((p) => p.product === productId);
+  const inWishlist = (productId) =>
+    items.some((p) => String(p.product) === String(productId));
 
   const add = (item) => {
     setItems((prev) => {
-      if (prev.some((p) => p.product === item.product)) return prev; // already there
+      if (prev.some((p) => String(p.product) === String(item.product))) return prev;
       return [item, ...prev];
     });
   };
 
   const remove = (productId) => {
-    setItems((prev) => prev.filter((p) => p.product !== productId));
+    setItems((prev) => prev.filter((p) => String(p.product) !== String(productId)));
   };
 
   const toggle = (item) => {
@@ -43,9 +45,10 @@ export function WishlistProvider({ children }) {
 
   const clear = () => setItems([]);
 
-  return (
-    <WishlistContext.Provider value={{ items, add, remove, toggle, inWishlist, clear, ready }}>
-      {children}
-    </WishlistContext.Provider>
+  const value = useMemo(
+    () => ({ items, add, remove, toggle, inWishlist, clear, ready, count: items.length }),
+    [items, ready]
   );
+
+  return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;
 }
