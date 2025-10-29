@@ -1,4 +1,5 @@
 import Collection from "../models/Collection.js";
+import Product from "../models/Product.js";
 
 // ✅ Create a new collection
 export const createCollection = async (req, res) => {
@@ -62,5 +63,51 @@ export const deleteCollection = async (req, res) => {
     res.status(200).json({ message: "Collection deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
+export const getCollectionProductsAdmin = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const inCollection = await Product.find({ collection: id })
+      .select("name price images");
+
+    const outside = await Product.find({
+      $or: [
+        { collection: { $exists: false } },
+        { collection: null },
+        { collection: { $ne: id } },
+      ],
+    }).select("name price images");
+
+    res.json({ inCollection, outside });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+export const updateCollectionProductsAdmin = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { add = [], remove = [] } = req.body;
+
+    const addRes = await Product.updateMany(
+      { _id: { $in: add } },
+      { $set: { collection: id } }
+    );
+
+    const removeRes = await Product.updateMany(
+      { _id: { $in: remove }, collection: id },
+      { $set: { collection: null } }
+    );
+
+    res.json({
+      added: addRes.modifiedCount,
+      removed: removeRes.modifiedCount,
+    });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
 };

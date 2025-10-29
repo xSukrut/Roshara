@@ -12,7 +12,7 @@ const productSchema = new mongoose.Schema(
             default: ROSHARA_SIZES
         },
         colors: [String],
-        images: [String],
+        images: [mongoose.Schema.Types.Mixed],
         stock: { type: Number, default: 0},
         collection: {type: mongoose.Schema.Types.ObjectId, ref: 'Collection'},
         isFeatured: {type: Boolean, default: false},

@@ -2,22 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import * as collectionSvc from "../../../services/collectionService";  
 import { getAllProducts } from "../../../services/productService";
+import { getCollection } from "../../../services/collectionService"; 
+import ProductCard from "../../components/NewArrivals/ProductCard";
+import ProductDetails from "../../components/NewArrivals/ProductDetails";
 
 export default function CollectionProductsPage() {
   const { id } = useParams() || {};
   const [collection, setCollection] = useState(null);
   const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     if (!id) return;
 
-    // Quick sanity check:
-    // console.log("collectionSvc keys:", Object.keys(collectionSvc));
-
-    collectionSvc
-      .getCollection(id)           // <-- will work for named or default exports
+    getCollection(id)
       .then(setCollection)
       .catch((e) => console.error("Failed to load collection:", e));
 
@@ -31,19 +30,16 @@ export default function CollectionProductsPage() {
       .catch((e) => console.error("Failed to load products:", e));
   }, [id]);
 
-  if (!collection) {
-    return (
-      <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-2">Collection</h1>
-        <p className="text-gray-600">Loading…</p>
-      </div>
-    );
-  }
+  const handleOpenQuickView = (product) => setSelectedProduct(product);
+  const handleCloseQuickView = () => setSelectedProduct(null);
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-2xl font-semibold mb-1">{collection.name}</h1>
-      {collection.description && (
+      <h1 className="text-2xl font-semibold mb-1">
+        {collection?.name || "Collection"}
+      </h1>
+
+      {collection?.description && (
         <p className="text-gray-600 mb-6">{collection.description}</p>
       )}
 
@@ -52,28 +48,18 @@ export default function CollectionProductsPage() {
       ) : (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
           {products.map((p) => (
-            <div key={p._id} className="border rounded overflow-hidden">
-              <div className="aspect-square bg-gray-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={
-                    Array.isArray(p.images) && p.images[0]
-                      ? (typeof p.images[0] === "string"
-                          ? p.images[0]
-                          : p.images[0]?.url || p.images[0]?.src || p.images[0]?.path) || "/placeholder.png"
-                      : "/placeholder.png"
-                  }
-                  alt={p.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-3">
-                <div className="font-medium">{p.name}</div>
-                <div className="text-sm text-gray-700">₹{p.price}</div>
-              </div>
-            </div>
+            <ProductCard
+              key={p._id}
+              product={p}
+              onSearch={handleOpenQuickView}
+              size="lg"
+            />
           ))}
         </div>
+      )}
+
+      {selectedProduct && (
+        <ProductDetails product={selectedProduct} onClose={handleCloseQuickView} />
       )}
     </div>
   );

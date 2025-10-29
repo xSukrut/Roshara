@@ -18,11 +18,10 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <WishlistProvider>
             <CartProvider>
-              {/* Fixed navbar at top */}
+
               <Navbar />
               <ShowMiniCart />
 
-              {/* Add top padding so content doesn't sit under the fixed navbar */}
               <main className="pt-16">{children}</main>
 
               {/* Static footer */}

@@ -5,6 +5,8 @@ import {
   getCollectionById,
   updateCollection,
   deleteCollection,
+  getCollectionProductsAdmin,
+  updateCollectionProductsAdmin,
 } from "../controllers/collectionController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
@@ -12,6 +14,10 @@ const router = express.Router();
 
 // Public: Get all
 router.get("/", getCollections);
+
+// admin products-in-collection management
+router.get("/:id/products", protect, admin, getCollectionProductsAdmin);
+router.put("/:id/products", protect, admin, updateCollectionProductsAdmin);
 
 // Admin CRUD
 router.post("/", protect, admin, createCollection);

@@ -1,4 +1,5 @@
-// services/collectionService.js
+import axios from "axios";
+import { API_BASE_URL } from "../utils/api";
 
 const API_BASE =
   (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
@@ -26,20 +27,18 @@ export async function getCollection(id) {
   return getJSON(`${API_BASE}/collections/${id}`);
 }
 
-/* If you have admin endpoints you can add them as needed:
-export async function createCollection(payload) {
-  return getJSON(`${API_BASE}/collections`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+export const getCollectionProductsAdmin = async (id, token) => {
+  const { data } = await axios.get(`${API_BASE_URL}/collections/${id}/products`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
-}
+  return data;
+};
 
-export async function updateCollection(id, payload) {
-  return getJSON(`${API_BASE}/collections/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-*/
+export const updateCollectionProductsAdmin = async (id, payload, token) => {
+  const { data } = await axios.put(
+    `${API_BASE_URL}/collections/${id}/products`,
+    payload,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return data;
+};
