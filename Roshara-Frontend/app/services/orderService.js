@@ -22,7 +22,12 @@ export const adminUpdateOrderStatus = async (token, orderId, status) => {
   return data;
 };
 
-// (keep these the same style)
+// List current user's orders
+export const listMyOrders = async (token) => {
+  const { data } = await api.get("/orders/my", auth(token));
+  return Array.isArray(data) ? data : [];
+};
+
 export const getOrderById = async (token, id) => {
   const { data } = await api.get(`/orders/${id}`, auth(token));
   return data;
