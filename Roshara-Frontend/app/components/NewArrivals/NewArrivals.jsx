@@ -11,7 +11,7 @@ export default function NewArrivals() {
 
   useEffect(() => {
     getAllProducts()
-      .then((data) => Array.isArray(data) ? setAll(data) : setAll([]))
+      .then((data) => (Array.isArray(data) ? setAll(data) : setAll([])))
       .catch(() => setAll([]));
   }, []);
 
@@ -23,35 +23,95 @@ export default function NewArrivals() {
       const tb = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
       return tb - ta;
     });
-    return copy.slice(0, 5);
+    return copy.slice(0, 4);
   }, [all]);
 
   return (
-    <section className="p-8">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-3xl font-bold text-center mb-6">New Arrivals</h2>
-        <Link
-          href="/new-arrivals"
-          className="bg-black text-white px-5 py-2 rounded hover:bg-gray-800 transition"
-        >
-          View All
-        </Link>
-      </div>
+    // <section className=" max-w-7xl w-full items-center justify-center p-4">
+    //   <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
+    //     {/* Left Section - Heading */}
+    //     <h2 className="text-[#4A1718] text-4xl font-bold mb-4 md:mb-0">
+    //       New Arrivals <br /> That Speak Style
+    //     </h2>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {latestFive.map((p) => (
-          <ProductCard
-            key={p._id}
-            product={p}
-            onSearch={setSelectedProduct}
-            className="w-64 h-80"
+    //     {/* Right Section - Subheading + Button */}
+    //     <div className="flex flex-col items-start md:items-end text-end max-w-sm">
+    //       <p className="text-sm font-normal text-gray-700 mb-0.5 leading-relaxed">
+    //         From effortless everyday wear to festive statements, find the styles
+    //         that make you feel beautifully you.
+    //       </p>
+
+    //       <Link
+    //         href="/new-arrivals"
+    //         className="bg-black text-white px-5 py-2 rounded hover:bg-gray-800 transition"
+    //       >
+    //         View All
+    //       </Link>
+    //     </div>
+    //   </div>
+
+    //   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    //     {latestFive.map((p) => (
+    //       <ProductCard
+    //         key={p._id}
+    //         product={p}
+    //         onSearch={setSelectedProduct}
+    //         className="w-64 h-80"
+    //       />
+    //     ))}
+    //   </div>
+
+    //   {selectedProduct && (
+    //     <ProductDetails
+    //       product={selectedProduct}
+    //       onClose={() => setSelectedProduct(null)}
+    //     />
+    //   )}
+    // </section>
+
+    <section className="w-full flex justify-center">
+      <div className="max-w-7xl w-full p-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
+          {/* Left Section - Heading */}
+          <h2 className="text-[#4A1718] text-4xl font-bold mb-4 md:mb-0">
+            New Arrivals <br /> That Speak Style
+          </h2>
+
+          {/* Right Section - Subheading + Button */}
+          <div className="flex flex-col items-start md:items-end text-end max-w-sm">
+            <p className="text-sm font-normal text-gray-700 mb-0.5 leading-relaxed">
+              From effortless everyday wear to festive statements, find the
+              styles that make you feel beautifully you.
+            </p>
+
+            <Link
+              href="/new-arrivals"
+              className="bg-black text-white px-5 py-2 rounded hover:bg-gray-800 transition"
+            >
+              View All
+            </Link>
+          </div>
+        </div>
+
+        {/* Product Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+          {latestFive.map((p) => (
+            <ProductCard
+              key={p._id}
+              product={p}
+              onSearch={setSelectedProduct}
+              className="w-full h-auto"
+            />
+          ))}
+        </div>
+
+        {selectedProduct && (
+          <ProductDetails
+            product={selectedProduct}
+            onClose={() => setSelectedProduct(null)}
           />
-        ))}
+        )}
       </div>
-
-      {selectedProduct && (
-        <ProductDetails product={selectedProduct} onClose={() => setSelectedProduct(null)} />
-      )}
     </section>
   );
 }

@@ -8,7 +8,8 @@ import { useWishlist } from "../../../context/WishlistContext";
 
 // Build absolute URL for uploaded images
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") ||
+  "http://localhost:5000";
 
 const urlFor = (src) => {
   if (!src) return "/placeholder.png";
@@ -43,7 +44,10 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
   useEffect(() => {
     let t;
     if (hovering && images.length > 1) {
-      t = setInterval(() => setCurrentImage((p) => (p + 1) % images.length), 600);
+      t = setInterval(
+        () => setCurrentImage((p) => (p + 1) % images.length),
+        600
+      );
     }
     return () => clearInterval(t);
   }, [hovering, images.length]);
@@ -123,8 +127,8 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
 
       {/* Product Info */}
       <div className="text-center mt-3">
-        <h3 className="font-semibold text-gray-800">{product.name}</h3>
-        <p className="text-gray-900 font-semibold">
+        <h3 className="font-semibold text-2xl text-gray-800">{product.name}</h3>
+        <p className="text-gray-600 text-lg font-semibold">
           ₹{Number(product.price).toLocaleString("en-IN")}
         </p>
       </div>
@@ -133,7 +137,12 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
       {showQuickAdd && (
         <div className="absolute top-0 right-0 w-56 bg-white shadow-xl rounded p-4 z-50">
           <div className="relative w-full h-32 mb-3">
-            <Image src={images[0]} alt={product.name} fill className="object-cover rounded" />
+            <Image
+              src={images[0]}
+              alt={product.name}
+              fill
+              className="object-cover rounded"
+            />
             <div className="absolute inset-0 bg-blue-200/30 rounded" />
           </div>
 
@@ -141,7 +150,10 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
           <div className="mb-3">
             <p className="text-sm font-semibold mb-1">Select Size</p>
             <div className="flex gap-2 flex-wrap">
-              {(product?.sizes?.length ? product.sizes : ["XS", "S", "M", "L", "XL"]).map((s) => (
+              {(product?.sizes?.length
+                ? product.sizes
+                : ["XS", "S", "M", "L", "XL"]
+              ).map((s) => (
                 <button
                   key={s}
                   onClick={() => setSelectedSize(s)}

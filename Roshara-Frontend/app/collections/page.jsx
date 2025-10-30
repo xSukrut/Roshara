@@ -5,7 +5,8 @@ import Link from "next/link";
 import { getAllCollections } from "../services/collectionService";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") ||
+  "http://localhost:5000";
 
 const pickPath = (src) => {
   if (!src) return null;
@@ -16,17 +17,9 @@ const pickPath = (src) => {
 const urlFor = (src) => {
   const p = pickPath(src);
   if (!p) return "/placeholder.png";
-
-  // Already absolute
   if (p.startsWith("http")) return p;
-
-  // Ensure leading slash for relative paths
   const path = p.startsWith("/") ? p : `/${p}`;
-
-  // Most backends store images under /uploads
   if (path.startsWith("/uploads")) return `${API_BASE}${path}`;
-
-  // Fallback: still make it absolute against API_BASE
   return `${API_BASE}${path}`;
 };
 
