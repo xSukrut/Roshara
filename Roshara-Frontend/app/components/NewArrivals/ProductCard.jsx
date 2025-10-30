@@ -2,9 +2,10 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Search, ShoppingCart, Heart } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "../../../context/CartContext";
 import { useWishlist } from "../../../context/WishlistContext";
+import { ROSHARA_SIZES } from "../../constants/sizes"; // <- make sure this exists
 
 // Build absolute URL for uploaded images
 const API_BASE =
@@ -13,21 +14,31 @@ const API_BASE =
 
 const urlFor = (src) => {
   if (!src) return "/placeholder.png";
-  if (src.startsWith("http")) return src;
+  if (/^(https?:|data:|blob:)/.test(src)) return src;
   if (src.startsWith("/uploads")) return `${API_BASE}${src}`;
   return src;
 };
 
+// Normalize sizes to simple strings (handles objects or strings)
+function normalizeSizes(input) {
+  const arr = Array.isArray(input) ? input : [];
+  const normalized = arr
+    .map((s) => (typeof s === "string" ? s : s?.label || s?.value || ""))
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return [...new Set(normalized)];
+}
+
 export default function ProductCard({ product, onSearch, size = "md" }) {
   const { addItem, openMiniCart } = useCart();
-  const { inWishlist, toggle } = useWishlist(); // ✅ use context wishlist
+  const { inWishlist, toggle } = useWishlist();
 
   const [hovering, setHovering] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [selectedSize, setSelectedSize] = useState(null);
 
-  // Build images (fallback to placeholder)
+  // images
   const rawImages = Array.isArray(product?.images) ? product.images : [];
   let images = rawImages
     .map((img) => {
@@ -38,19 +49,32 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
       return s ? urlFor(s) : null;
     })
     .filter(Boolean);
-  if (images.length === 0) images = ["/placeholder.png"]; // placeholder fallback
+  if (images.length === 0) images = ["/placeholder.png"];
 
-  // cycle images on hover
+  // cycle on hover
   useEffect(() => {
     let t;
     if (hovering && images.length > 1) {
-      t = setInterval(
-        () => setCurrentImage((p) => (p + 1) % images.length),
-        600
-      );
+      t = setInterval(() => setCurrentImage((p) => (p + 1) % images.length), 600);
     }
     return () => clearInterval(t);
   }, [hovering, images.length]);
+
+  // sizes: prefer product.sizes; else use ROSHARA_SIZES (long set)
+  const sizeOptions = (() => {
+    const norm = normalizeSizes(product?.sizes);
+    return norm.length ? norm : ROSHARA_SIZES; // <- key change
+  })();
+
+  // preselect first size when opening panel
+  useEffect(() => {
+    if (showQuickAdd) {
+      setSelectedSize((prev) => prev ?? sizeOptions[0]);
+    } else {
+      setSelectedSize(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showQuickAdd, product?._id]);
 
   const heightClass = size === "lg" ? "h-[420px] md:h-[460px]" : "h-[350px]";
   const fav = inWishlist(product._id);
@@ -76,7 +100,6 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
 
         {/* Icons on hover */}
         <div className="absolute top-5 right-3 flex flex-col items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
-          {/* 🔍 Quick View */}
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -89,7 +112,6 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
             <Search className="w-5 h-5 text-gray-700" />
           </button>
 
-          {/* 🛒 Add to Cart */}
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -102,7 +124,6 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
             <ShoppingCart className="w-5 h-5 text-gray-700" />
           </button>
 
-          {/* ❤️ Wishlist */}
           <button
             className={`p-2 rounded-full shadow hover:scale-110 transition-transform ${
               fav ? "bg-red-500 text-white" : "bg-white"
@@ -125,7 +146,7 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
         </div>
       </motion.div>
 
-      {/* Product Info */}
+      {/* Info */}
       <div className="text-center mt-3">
         <h3 className="font-semibold text-2xl text-gray-800">{product.name}</h3>
         <p className="text-gray-600 text-lg font-semibold">
@@ -133,7 +154,7 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
         </p>
       </div>
 
-      {/* Quick Add Popup */}
+      {/* Quick Add */}
       {showQuickAdd && (
         <div className="absolute top-0 right-0 w-56 bg-white shadow-xl rounded p-4 z-50">
           <div className="relative w-full h-32 mb-3">
@@ -146,14 +167,10 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
             <div className="absolute inset-0 bg-blue-200/30 rounded" />
           </div>
 
-          {/* Sizes */}
           <div className="mb-3">
             <p className="text-sm font-semibold mb-1">Select Size</p>
             <div className="flex gap-2 flex-wrap">
-              {(product?.sizes?.length
-                ? product.sizes
-                : ["XS", "S", "M", "L", "XL"]
-              ).map((s) => (
+              {sizeOptions.map((s) => (
                 <button
                   key={s}
                   onClick={() => setSelectedSize(s)}
@@ -169,7 +186,6 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
             </div>
           </div>
 
-          {/* Buttons */}
           <div className="flex gap-2">
             <button
               onClick={() => {

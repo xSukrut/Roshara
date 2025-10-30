@@ -20,53 +20,42 @@ export const createOrder = asyncHandler(async (req, res) => {
   }
 
   // normalize product id & qty
-  const items = orderItems.map((it) => ({
+ const orderItemsNorm = orderItems.map((it) => ({
     ...it,
     product: it.product || it._id || it.id,
     quantity: it.quantity || it.qty || 1,
   }));
 
-  for (let i = 0; i < items.length; i++) {
-    if (!items[i].product) {
-      return res
-        .status(400)
-        .json({ message: `Missing product id for item #${i + 1}` });
+  for (const [i, item] of orderItemsNorm.entries()) {
+    if (!item?.product) {
+      return res.status(400).json({ message: `Missing product id for item #${i + 1}` });
     }
   }
 
   // compute items price and hydrate name/price
   let itemsPrice = 0;
-  for (const it of items) {
-    const prod = await Product.findById(it.product);
-    if (!prod) {
-      return res
-        .status(400)
-        .json({ message: `Product ${it.product} not found` });
-    }
-    itemsPrice += Number(prod.price) * Number(it.quantity || 1);
-    it.name = prod.name;
-    it.price = prod.price;
+  for (const item of orderItemsNorm) {
+    const prod = await Product.findById(item.product);
+    if (!prod) return res.status(400).json({ message: `Product ${item.product} not found` });
+    itemsPrice += Number(prod.price) * (item.quantity || 1);
+    item.name = prod.name;
+    item.price = prod.price;
   }
 
-  // coupon (optional)
+  // Coupon logic (ROSHARA10 = 10% above 1899)
   let discountAmount = 0;
   let coupon = null;
-  if (couponCode) {
-    coupon = await Coupon.findOne({
-      code: couponCode.toUpperCase(),
-      active: true,
-    });
 
-    if (!coupon) {
-      return res.status(400).json({ message: "Invalid or inactive coupon" });
-    }
+  if (couponCode) {
+    coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), active: true });
+    if (!coupon) return res.status(400).json({ message: "Invalid or inactive coupon" });
     if (coupon.expiryDate && coupon.expiryDate < new Date()) {
       return res.status(400).json({ message: "Coupon expired" });
     }
     if (coupon.usageLimit > 0 && coupon.usedCount >= coupon.usageLimit) {
       return res.status(400).json({ message: "Coupon usage limit reached" });
     }
-    if (itemsPrice < coupon.minOrderAmount) {
+    if (itemsPrice < (coupon.minOrderAmount || 0)) {
       return res.status(400).json({
         message: `Minimum order amount for coupon is ₹${coupon.minOrderAmount}`,
       });
@@ -80,11 +69,14 @@ export const createOrder = asyncHandler(async (req, res) => {
     if (discountAmount > itemsPrice) discountAmount = itemsPrice;
   }
 
-  const totalPrice = itemsPrice + Number(shippingPrice) - discountAmount;
+  // COD fee
+  const codFee = paymentMethod === "cod" ? 90 : 0;
+
+  const totalPrice = itemsPrice - discountAmount + shippingPrice + taxPrice + codFee;
 
   const order = new Order({
     user: req.user._id,
-    orderItems: items,
+    orderItems: orderItemsNorm,
     shippingAddress,
     paymentMethod,
     taxPrice,        
