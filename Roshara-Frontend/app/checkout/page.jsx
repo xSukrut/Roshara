@@ -4,20 +4,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
+
 import { createOrder, submitUpiProof } from "../services/orderService";
+import { getActiveCoupons } from "../../services/couponService";
 
 export default function CheckoutPage() {
-  const { user, token } = useAuth();
-  const {
-    items,
-    itemsPrice, // sum(price*qty) from context
-    setQty,
-    removeItem,
-    clear,
-  } = useCart();
   const router = useRouter();
+  const { user, token } = useAuth();
+  const { items, itemsPrice, setQty, removeItem, clear } = useCart();
 
   const [address, setAddress] = useState({
     address: "",
@@ -26,27 +23,60 @@ export default function CheckoutPage() {
     country: "India",
   });
   const [paymentMethod, setPaymentMethod] = useState("cod"); // "cod" | "upi"
-  const [couponCode, setCouponCode] = useState("");
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
+
   const [orderId, setOrderId] = useState(null);
   const [transactionId, setTransactionId] = useState("");
+
+  const [activeCoupons, setActiveCoupons] = useState([]);
+  const [selectedCouponCode, setSelectedCouponCode] = useState("");
 
   useEffect(() => {
     if (!user) router.push("/auth/login");
   }, [user, router]);
 
+  useEffect(() => {
+    getActiveCoupons().then(setActiveCoupons).catch(() => setActiveCoupons([]));
+  }, []);
+
+  const selectedCoupon = useMemo(() => {
+    if (!selectedCouponCode) return null;
+    return activeCoupons.find(
+      (c) => (c.code || "").toUpperCase() === selectedCouponCode.toUpperCase()
+    ) || null;
+  }, [activeCoupons, selectedCouponCode]);
+
   const estimated = useMemo(() => {
     const subtotal = Number(itemsPrice || 0);
-    const isCouponValid =
-      couponCode.trim().toUpperCase() === "ROSHARA10" && subtotal >= 1899;
-    const discount = isCouponValid ? Math.round(subtotal * 0.10) : 0;
-    const shipping = 0; // always free
-    const tax = 0; // removed entirely
+
+    // Compute discount based on selectedCoupon
+    let discount = 0;
+    if (selectedCoupon) {
+      const meetsMin = subtotal >= Number(selectedCoupon.minOrderAmount || 0);
+      const notExpired =
+        !selectedCoupon.expiryDate ||
+        new Date(selectedCoupon.expiryDate) >= new Date();
+      const isActive = !!selectedCoupon.active;
+
+      if (meetsMin && notExpired && isActive) {
+        if (selectedCoupon.discountType === "percentage") {
+          discount = Math.round((subtotal * Number(selectedCoupon.value)) / 100);
+        } else {
+          discount = Number(selectedCoupon.value || 0);
+        }
+        const cap = Number(selectedCoupon.maxDiscount || 0);
+        if (cap > 0) discount = Math.min(discount, cap);
+      }
+    }
+
+    const shipping = 0; // FREE
+    const tax = 0; // removed
     const codFee = paymentMethod === "cod" ? 90 : 0;
-    const total = subtotal - discount + shipping + tax + codFee;
+    const total = Math.max(0, subtotal - discount + shipping + tax + codFee);
+
     return { subtotal, discount, shipping, tax, codFee, total };
-  }, [itemsPrice, couponCode, paymentMethod]);
+  }, [itemsPrice, selectedCoupon, paymentMethod]);
 
   const getPid = (it) => it?.product || it?._id || it?.id;
 
@@ -69,16 +99,16 @@ export default function CheckoutPage() {
         name: it.name,
         quantity: it.qty ?? it.quantity ?? 1,
         price: it.price,
+        size: it.size,
       }));
 
       const payload = {
         orderItems,
         shippingAddress: address,
         paymentMethod,
-        // shipping & tax removed on server; we still send zeros
         taxPrice: 0,
         shippingPrice: 0,
-        couponCode: couponCode.trim() || null,
+        couponCode: selectedCouponCode || null,
       };
 
       const order = await createOrder(token, payload);
@@ -87,7 +117,7 @@ export default function CheckoutPage() {
         clear();
         router.push(`/order/${order._id}?status=pending`);
       } else {
-        setOrderId(order._id); // show UPI block
+        setOrderId(order._id); // show UPI section
       }
     } catch (e) {
       console.error(e);
@@ -104,6 +134,7 @@ export default function CheckoutPage() {
     }
     try {
       await submitUpiProof(token, orderId, transactionId);
+      clear();
       router.push(`/order/${orderId}?status=pending_verification`);
     } catch (e) {
       console.error(e);
@@ -134,6 +165,7 @@ export default function CheckoutPage() {
                 <div className="flex-1">
                   <div className="font-medium">{it.name}</div>
                   <div className="text-sm text-gray-600">₹{it.price}</div>
+                  {it.size && <div className="text-sm text-gray-600">Size: {it.size}</div>}
                   <div className="mt-2 flex items-center gap-2">
                     <label className="text-sm">Qty</label>
                     <input
@@ -214,25 +246,20 @@ export default function CheckoutPage() {
 
         {/* Coupon */}
         <div className="mt-6">
-          <label className="font-medium block mb-1">Coupon Code</label>
-          <div className="flex gap-2">
-            <input
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              placeholder="Enter code (e.g., ROSHARA10)"
-              className="border rounded px-3 py-2 flex-1"
-            />
-            <button
-              type="button"
-              className="bg-black text-white px-4 py-2 rounded"
-              onClick={() => setCouponCode(couponCode.trim().toUpperCase())}
-            >
-              Apply
-            </button>
-          </div>
-          {couponCode && !(couponCode.toUpperCase() === "ROSHARA10" && estimated.subtotal >= 1899) && (
-            <p className="text-sm text-amber-700 mt-1">Coupon not applicable to current subtotal.</p>
-          )}
+          <label className="font-medium block mb-1">Apply Coupon</label>
+          <select
+            className="border rounded px-3 py-2"
+            value={selectedCouponCode}
+            onChange={(e) => setSelectedCouponCode(e.target.value)}
+          >
+            <option value="">-- Choose a coupon --</option>
+            {activeCoupons.map((c) => (
+              <option key={c._id} value={c.code}>
+                {c.code} — {c.discountType === "percentage" ? `${c.value}% off` : `₹${c.value} off`}
+                {Number(c?.minOrderAmount || 0) > 0 ? ` (min ₹${c.minOrderAmount})` : ""}
+              </option>
+            ))}
+          </select>
         </div>
 
         {error && <p className="mt-4 text-red-600">{error}</p>}
@@ -289,7 +316,7 @@ export default function CheckoutPage() {
         )}
       </section>
 
-      {/* Price details (FREE shipping, no tax, show COD fee) */}
+      {/* Price details */}
       <aside className="md:col-span-1 border rounded p-4 h-fit">
         <h3 className="font-semibold mb-3">Price Details</h3>
 
@@ -305,7 +332,7 @@ export default function CheckoutPage() {
 
         {estimated.discount > 0 && (
           <div className="flex justify-between text-sm mt-1 text-green-700">
-            <span>Discount (ROSHARA10)</span>
+            <span>Discount{selectedCoupon ? ` (${selectedCoupon.code})` : ""}</span>
             <span>-₹{estimated.discount}</span>
           </div>
         )}
