@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
-import { listOrdersAdmin, adminVerifyOrder } from "../../services/orderService";
+import { listOrdersAdmin, adminVerifyOrder, adminUpdateOrderStatus } from "../../services/orderService";
 
 export default function AdminOrdersPage() {
   const router = useRouter();
@@ -48,17 +48,18 @@ export default function AdminOrdersPage() {
     await load();
   };
 
-  const mark = async (id, action) => {
-    try {
-      setBusyId(id);
-      await adminVerifyOrder(token, id, action);
-      await load();
-    } catch (e) {
-      setError(e?.response?.data?.message || "Update failed");
-    } finally {
-      setBusyId(null);
-    }
-  };
+const mark = async (id, action) => {
+  try {
+    setBusyId(id);
+    // action is "paid" or "rejected"
+    await adminUpdateOrderStatus(token, id, action);
+    await load();
+  } catch (e) {
+    setError(e?.response?.data?.message || "Update failed");
+  } finally {
+    setBusyId(null);
+  }
+}
 
   if (loading || !user) return <div className="p-6">Loading…</div>;
   if (!(user.role === "admin" || user.isAdmin)) return null;

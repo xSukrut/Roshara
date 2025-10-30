@@ -4,29 +4,20 @@ import {
   submitUpiProof,
   getOrderById,
   getMyOrders,
-  getAllOrdersAdmin,
-  verifyOrderPayment,
+  adminListOrders,
   updateOrderStatus,
-  payOrderSimulated, // optional
 } from "../controllers/orderController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// customer
 router.post("/", protect, createOrder);
 router.get("/my", protect, getMyOrders);
-router.get("/:id", protect, getOrderById);
 
-// customer submits UPI proof (txn id)
-router.post("/:id/upi-proof", protect, submitUpiProof);
-
-// admin
-router.get("/", protect, admin, getAllOrdersAdmin);
-router.put("/:id/verify", protect, admin, verifyOrderPayment);
+router.get("/admin", protect, admin, adminListOrders);
 router.put("/:id/status", protect, admin, updateOrderStatus);
 
-// dev/test
-router.put("/:id/pay-simulated", protect, admin, payOrderSimulated);
+router.get("/:id", protect, getOrderById);
+router.post("/:id/upi-proof", protect, submitUpiProof);
 
 export default router;

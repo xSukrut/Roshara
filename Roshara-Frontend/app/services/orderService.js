@@ -4,6 +4,30 @@ const auth = (token) => ({
   headers: { Authorization: `Bearer ${token}` },
 });
 
+export const listOrdersAdmin = async (token, { q = "", status = "" } = {}) => {
+  const { data } = await api.get("/orders/admin", {
+    ...auth(token),
+    params: { q, status },
+  });
+  return data;
+};
+
+export const adminUpdateOrderStatus = async (token, orderId, status) => {
+  // status: "paid" | "rejected" | "pending_verification"
+  const { data } = await api.put(
+    `/orders/${orderId}/status`,
+    { status },
+    auth(token)
+  );
+  return data;
+};
+
+// (keep these the same style)
+export const getOrderById = async (token, id) => {
+  const { data } = await api.get(`/orders/${id}`, auth(token));
+  return data;
+};
+
 export const createOrder = async (token, payload) => {
   const { data } = await api.post("/orders", payload, auth(token));
   return data;
@@ -15,28 +39,5 @@ export const submitUpiProof = async (token, id, transactionId) => {
     { transactionId },
     auth(token)
   );
-  return data;
-};
-
-export const verifyOrderPayment = async (token, id, action, note) => {
-  const { data } = await api.put(
-    `/orders/${id}/verify`,
-    { action, note },
-    auth(token)
-  );
-  return data;
-};
-
-export const listOrdersAdmin = async (token, params = {}) => {
-  const { data } = await api.get("/orders", {
-    headers: { Authorization: `Bearer ${token}` },
-    params,
-  });
-  return data;
-};
-
-// ✅ NEW: fetch a single order by ID
-export const getOrderById = async (token, id) => {
-  const { data } = await api.get(`/orders/${id}`, auth(token));
   return data;
 };

@@ -89,10 +89,9 @@ export function CartProvider({ children }) {
     [items]
   );
 
-  // You can keep your shipping/tax rules; simple placeholders here:
+  // You can keep your shipping rules; simple placeholders here:
   const shippingPrice = 0;
-  const taxPrice = Math.round(itemsPrice * 0.05); // example 5% tax
-  const totalPrice = itemsPrice + shippingPrice + taxPrice;
+  const totalPrice = itemsPrice + shippingPrice;
 
   // optional: to open a mini cart if you have one
   const openMiniCart = () => document.dispatchEvent(new Event("openMiniCart"));
@@ -107,7 +106,6 @@ export function CartProvider({ children }) {
         clear,
         itemsPrice,
         shippingPrice,
-        taxPrice,
         totalPrice,
         openMiniCart,
       }}
