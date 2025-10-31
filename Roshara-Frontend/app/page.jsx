@@ -49,7 +49,7 @@ export default function Homepage() {
           <h2 className="text-2xl font-semibold">Our Collections</h2>
           <Link
             href="/collections"
-            className="text-blue-600 hover:underline font-medium"
+            className="bg-black text-white px-5 py-2 rounded hover:bg-gray-800 transition"
           >
             View All
           </Link>

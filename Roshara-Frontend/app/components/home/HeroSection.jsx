@@ -104,8 +104,8 @@ export default function HeroSection() {
           className="absolute right-30 top-30 h-100 flex items-center"
         >
           <p className="text-white text-ms tracking-wider leading-relaxed rotate-180 [writing-mode:vertical-rl]">
-            Roshar — Bold prints, unapologetic visuals, and a movement to make
-            India wear its roots with pride.
+            Roshara — Bold prints, unapologetic visuals, and a movement to make
+            India wear its roots with pride and confidence.
           </p>
         </motion.div>
       </div>

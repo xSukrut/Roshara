@@ -18,7 +18,7 @@ export default function ShippingReturnsPage() {
 
       <h2>2. Order Changes & Cancellations</h2>
       <ul>
-        <li><strong>No cancellations/changes after placing an order.</strong> If unshipped, we’ll try to help but can’t guarantee.</li>
+        <li>No cancellations/changes after placing an order.</li>
         <li>No modifications after shipment.</li>
         <li>We may cancel for stock/verification/technical reasons with refund or store credit (in the form of coupons).</li>
       </ul>

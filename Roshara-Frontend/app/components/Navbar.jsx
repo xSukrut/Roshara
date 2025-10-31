@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { Heart, ShoppingBag, User, ChevronDown } from "lucide-react";
+import { Heart, ShoppingBag, User } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
@@ -32,25 +32,22 @@ export default function Navbar() {
 
   useEffect(() => setMenuOpen(false), [pathname]);
 
-  /**
-   * Desktop & Mobile navigation structure
-   * Add About dropdown with two items:
-   *  - About ROSHARA (/about)
-   *  - Shipping & Return Policy (/about/shipping-returns)
-   */
-  const navLinks = [
-    { name: "New Arrivals", path: "/new-arrivals" },
-    { name: "Shop All", path: "/shop" },
-    { name: "Collections", path: "/collections" },
-    {
-      name: "About",
-      dropdown: [
-        { name: "About ROSHARA", path: "/about" },
-        { name: "Shipping & Return Policy", path: "/about/shipping-returns" },
-      ],
-    },
-    { name: "Contact Us", path: "/contact" },
-  ];
+  // ===== Desktop "About" dropdown state (click-to-toggle) =====
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const aboutRef = useRef(null);
+
+  // Close About on outside click
+  useEffect(() => {
+    const onDoc = (e) => {
+      if (!aboutRef.current) return;
+      if (!aboutRef.current.contains(e.target)) setAboutOpen(false);
+    };
+    document.addEventListener("click", onDoc);
+    return () => document.removeEventListener("click", onDoc);
+  }, []);
+
+  // Close About on route change
+  useEffect(() => setAboutOpen(false), [pathname]);
 
   const isTransparent = isHome && !scrolled;
   const textClass = isTransparent ? "text-white" : "text-black";
@@ -58,6 +55,11 @@ export default function Navbar() {
   const frameClass = isTransparent
     ? "bg-transparent border-transparent"
     : "bg-white/85 backdrop-blur border-gray-200 shadow-sm";
+
+  // Active underline helper
+  const isActive = (path) => pathname === path;
+  const isAboutActive =
+    pathname === "/about" || pathname.startsWith("/policies/shipping-returns");
 
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${frameClass}`}>
@@ -77,61 +79,93 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Nav */}
-        <ul className={`hidden md:flex space-x-4 items-center ${textClass}`}>
-          {navLinks.map((link) => {
-            const active = pathname === link.path;
+        <ul className={`hidden md:flex space-x-6 items-center ${textClass}`}>
+          <li>
+            <Link
+              href="/new-arrivals"
+              className={`${hoverClass} ${isActive("/new-arrivals") ? "underline underline-offset-8" : ""}`}
+            >
+              New Arrivals
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/shop"
+              className={`${hoverClass} ${isActive("/shop") ? "underline underline-offset-8" : ""}`}
+            >
+              Shop All
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/collections"
+              className={`${hoverClass} ${isActive("/collections") ? "underline underline-offset-8" : ""}`}
+            >
+              Collections
+            </Link>
+          </li>
 
-            // Dropdown item
-            if (link.dropdown?.length) {
-              return (
-                <li key={link.name} className="relative group">
-                  <button
-                    className={`inline-flex items-center gap-1 ${hoverClass}`}
-                    aria-haspopup="menu"
-                    aria-expanded="false"
-                  >
-                    {link.name} <ChevronDown className="w-4 h-4" />
-                  </button>
+          {/* About (click-to-toggle) */}
+          {/* About (click-to-toggle) */}
+{/* About (click-to-toggle) */}
+<li className="relative" ref={aboutRef}>
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation();
+      setAboutOpen((s) => !s);
+    }}
+    className={`inline-flex items-center gap-1 ${hoverClass}`}
+    aria-haspopup="menu"
+    aria-expanded={aboutOpen ? "true" : "false"}
+  >
+    {/* underline only the word “About”, not the arrow */}
+    <span className={isAboutActive ? "underline underline-offset-8 decoration-2" : ""}>
+      About
+    </span>
+    <span className="translate-y-[1px] no-underline">▾</span>
+  </button>
 
-                  {/* Dropdown panel */}
-                  <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-150 absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 rounded-md border bg-white text-black shadow-lg">
-                    {link.dropdown.map((d) => (
-                      <Link
-                        key={d.name}
-                        href={d.path}
-                        className="block px-4 py-2 text-sm hover:bg-gray-50"
-                      >
-                        {d.name}
-                      </Link>
-                    ))}
-                  </div>
-                </li>
-              );
-            }
+  {aboutOpen && (
+    <div
+      role="menu"
+      className="absolute mt-3 w-64 rounded-md border bg-white text-black shadow-lg p-2 z-50"
+    >
+      <Link
+        href="/about"
+        className="block px-3 py-2 rounded hover:bg-gray-50"
+      >
+        About ROSHARA
+      </Link>
+      {/* ✅ point to where your page actually is */}
+      <Link
+        href="/about/shipping-returns"
+        className="block px-3 py-2 rounded hover:bg-gray-50"
+      >
+        Shipping & Return Policy
+      </Link>
+    </div>
+  )}
+</li>
 
-            // Regular link
-            return (
-              <li key={link.name} className="relative group">
-                <Link
-                  href={link.path}
-                  className={`${hoverClass} ${active ? "underline underline-offset-8" : ""}`}
-                >
-                  {link.name}
-                </Link>
-              </li>
-            );
-          })}
+
+
+          <li>
+            <Link
+              href="/contact"
+              className={`${hoverClass} ${isActive("/contact") ? "underline underline-offset-8" : ""}`}
+            >
+              Contact Us
+            </Link>
+          </li>
         </ul>
 
         {/* Icons + Auth (Desktop) */}
         <div className={`hidden md:flex items-center space-x-4 ${textClass}`}>
-          {/* Wishlist → /wishlist */}
           <Link href="/wishlist" className={`relative flex items-center ${hoverClass}`} aria-label="Wishlist">
             <Heart />
             <span className="ml-2 text-sm">{wishlistCount}</span>
           </Link>
-
-          {/* Cart → /cart */}
           <Link href="/cart" className={`relative flex items-center ${hoverClass}`} aria-label="Cart">
             <ShoppingBag />
             <span className="ml-2 text-sm">{cartCount}</span>
@@ -140,7 +174,6 @@ export default function Navbar() {
           {user ? (
             <div className="flex items-center gap-3">
               <UserMenu user={user} isTransparent={isTransparent} onLogout={logout} />
-
               {(user.role === "admin" || user.isAdmin) && (
                 <Link
                   href="/admin"
@@ -184,52 +217,33 @@ export default function Navbar() {
       {menuOpen && (
         <div className="md:hidden bg-white text-black px-6 py-4 shadow">
           <ul className="space-y-2">
-            {navLinks.map((link) => {
-              // Mobile dropdown for About
-              if (link.dropdown?.length) {
-                return <MobileDropdown key={link.name} label={link.name} items={link.dropdown} />;
-              }
-              return (
-                <li key={link.name}>
-                  <Link href={link.path} className="block font-medium">
-                    {link.name}
-                  </Link>
-                </li>
-              );
-            })}
+            <li><Link href="/new-arrivals" className="block font-medium">New Arrivals</Link></li>
+            <li><Link href="/shop" className="block font-medium">Shop All</Link></li>
+            <li><Link href="/collections" className="block font-medium">Collections</Link></li>
+
+            {/* Mobile About as inline expandable */}
+            <li className="pt-2 border-t">
+              <div className="font-semibold mb-1">About</div>
+              <div className="ml-2 space-y-1">
+                <Link href="/about" className="block">About ROSHARA</Link>
+                <Link href="/policies/shipping-returns" className="block">Shipping & Return Policy</Link>
+              </div>
+            </li>
 
             {(user?.role === "admin" || user?.isAdmin) && (
               <li className="pt-2">
-                <Link href="/admin" className="block font-semibold">
-                  Admin Dashboard →
-                </Link>
+                <Link href="/admin" className="block font-semibold">Admin Dashboard →</Link>
               </li>
             )}
 
             {user ? (
               <>
-                <li className="pt-2">
-                  <Link href="/account" className="block">
-                    My Account
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/account/orders" className="block">
-                    My Orders
-                  </Link>
-                </li>
-                <li>
-                  <button onClick={logout} className="block w-full text-left">
-                    Logout
-                  </button>
-                </li>
+                <li className="pt-2"><Link href="/account" className="block">My Account</Link></li>
+                <li><Link href="/account/orders" className="block">My Orders</Link></li>
+                <li><button onClick={logout} className="block w-full text-left">Logout</button></li>
               </>
             ) : (
-              <li className="pt-2">
-                <Link href="/auth/login" className="block">
-                  Login
-                </Link>
-              </li>
+              <li className="pt-2"><Link href="/auth/login" className="block">Login</Link></li>
             )}
 
             <li className="pt-4 border-t">
@@ -251,7 +265,7 @@ export default function Navbar() {
   );
 }
 
-/** Desktop account dropdown */
+/** Small inline dropdown just for the desktop “Hi, {name} ▾” */
 function UserMenu({ user, isTransparent, onLogout }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -273,37 +287,22 @@ function UserMenu({ user, isTransparent, onLogout }) {
         aria-haspopup="menu"
         aria-expanded={open ? "true" : "false"}
       >
-        Hi, {user.name?.split(" ")[0] || "User"}
-        <span className="inline-block translate-y-[1px]">▾</span>
+        Hi, {user.name?.split(" ")[0] || "User"} <span className="translate-y-1px">▾</span>
       </button>
 
       {open && (
         <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow text-sm z-50">
-          <Link
-            href="/account"
-            className="block px-4 py-2 hover:bg-gray-50"
-            onClick={() => setOpen(false)}
-          >
+          <Link href="/account" className="block px-4 py-2 hover:bg-gray-50" onClick={() => setOpen(false)}>
             My Account
           </Link>
-          <Link
-            href="/account/orders"
-            className="block px-4 py-2 hover:bg-gray-50"
-            onClick={() => setOpen(false)}
-          >
+          <Link href="/account/orders" className="block px-4 py-2 hover:bg-gray-50" onClick={() => setOpen(false)}>
             My Orders
           </Link>
-
           {(user.role === "admin" || user.isAdmin) && (
-            <Link
-              href="/admin"
-              className="block px-4 py-2 hover:bg-gray-50"
-              onClick={() => setOpen(false)}
-            >
+            <Link href="/admin" className="block px-4 py-2 hover:bg-gray-50" onClick={() => setOpen(false)}>
               Admin
             </Link>
           )}
-
           <button
             onClick={() => {
               setOpen(false);
@@ -316,31 +315,5 @@ function UserMenu({ user, isTransparent, onLogout }) {
         </div>
       )}
     </div>
-  );
-}
-
-/** Small collapsible for mobile About dropdown */
-function MobileDropdown({ label, items }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <li className="border rounded-md">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full text-left font-medium px-3 py-2 flex items-center justify-between"
-        aria-expanded={open ? "true" : "false"}
-      >
-        {label}
-        <ChevronDown className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="pb-2">
-          {items.map((it) => (
-            <Link key={it.name} href={it.path} className="block pl-6 pr-3 py-2 text-sm hover:bg-gray-50">
-              {it.name}
-            </Link>
-          ))}
-        </div>
-      )}
-    </li>
   );
 }
