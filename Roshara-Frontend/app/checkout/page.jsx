@@ -13,7 +13,7 @@ import { getActiveCoupons } from "../../services/couponService";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, token, loading } = useAuth();              // ⬅️ include loading
   const { items, itemsPrice, setQty, removeItem, clear } = useCart();
 
   const [address, setAddress] = useState({
@@ -32,9 +32,13 @@ export default function CheckoutPage() {
   const [activeCoupons, setActiveCoupons] = useState([]);
   const [selectedCouponCode, setSelectedCouponCode] = useState("");
 
+  // ⬇️ Wait for auth to finish initializing before redirecting
   useEffect(() => {
-    if (!user) router.push("/auth/login");
-  }, [user, router]);
+    if (loading) return;                       // wait
+    if (!user) {
+      router.replace("/auth/login?next=/checkout");
+    }
+  }, [user, loading, router]);
 
   useEffect(() => {
     getActiveCoupons().then(setActiveCoupons).catch(() => setActiveCoupons([]));
@@ -42,15 +46,16 @@ export default function CheckoutPage() {
 
   const selectedCoupon = useMemo(() => {
     if (!selectedCouponCode) return null;
-    return activeCoupons.find(
-      (c) => (c.code || "").toUpperCase() === selectedCouponCode.toUpperCase()
-    ) || null;
+    return (
+      activeCoupons.find(
+        (c) => (c.code || "").toUpperCase() === selectedCouponCode.toUpperCase()
+      ) || null
+    );
   }, [activeCoupons, selectedCouponCode]);
 
   const estimated = useMemo(() => {
     const subtotal = Number(itemsPrice || 0);
 
-    // Compute discount based on selectedCoupon
     let discount = 0;
     if (selectedCoupon) {
       const meetsMin = subtotal >= Number(selectedCoupon.minOrderAmount || 0);
@@ -61,7 +66,9 @@ export default function CheckoutPage() {
 
       if (meetsMin && notExpired && isActive) {
         if (selectedCoupon.discountType === "percentage") {
-          discount = Math.round((subtotal * Number(selectedCoupon.value)) / 100);
+          discount = Math.round(
+            (subtotal * Number(selectedCoupon.value)) / 100
+          );
         } else {
           discount = Number(selectedCoupon.value || 0);
         }
@@ -70,8 +77,8 @@ export default function CheckoutPage() {
       }
     }
 
-    const shipping = 0; // FREE
-    const tax = 0; // removed
+    const shipping = 0;
+    const tax = 0;
     const codFee = paymentMethod === "cod" ? 90 : 0;
     const total = Math.max(0, subtotal - discount + shipping + tax + codFee);
 
@@ -117,7 +124,7 @@ export default function CheckoutPage() {
         clear();
         router.push(`/order/${order._id}?status=pending`);
       } else {
-        setOrderId(order._id); // show UPI section
+        setOrderId(order._id);
       }
     } catch (e) {
       console.error(e);
@@ -144,6 +151,10 @@ export default function CheckoutPage() {
 
   const keyFor = (it) => getPid(it) || `${it.name}-${Math.random()}`;
 
+  // ⬇️ While auth is bootstrapping, avoid rendering the rest (prevents flicker + bad redirect)
+  if (loading) return <div className="p-6">Loading…</div>;
+  if (!user) return null; // safety: won't show content if user still not present after loading
+
   return (
     <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8 mt-6">
       {/* Bag / Items */}
@@ -165,14 +176,18 @@ export default function CheckoutPage() {
                 <div className="flex-1">
                   <div className="font-medium">{it.name}</div>
                   <div className="text-sm text-gray-600">₹{it.price}</div>
-                  {it.size && <div className="text-sm text-gray-600">Size: {it.size}</div>}
+                  {it.size && (
+                    <div className="text-sm text-gray-600">Size: {it.size}</div>
+                  )}
                   <div className="mt-2 flex items-center gap-2">
                     <label className="text-sm">Qty</label>
                     <input
                       type="number"
                       min="1"
                       value={it.qty}
-                      onChange={(e) => setQty(getPid(it), Number(e.target.value))}
+                      onChange={(e) =>
+                        setQty(getPid(it), Number(e.target.value))
+                      }
                       className="w-16 border rounded px-2 py-1"
                     />
                     <button
@@ -196,25 +211,33 @@ export default function CheckoutPage() {
               placeholder="Address"
               className="border rounded px-3 py-2"
               value={address.address}
-              onChange={(e) => setAddress({ ...address, address: e.target.value })}
+              onChange={(e) =>
+                setAddress({ ...address, address: e.target.value })
+              }
             />
             <input
               placeholder="City"
               className="border rounded px-3 py-2"
               value={address.city}
-              onChange={(e) => setAddress({ ...address, city: e.target.value })}
+              onChange={(e) =>
+                setAddress({ ...address, city: e.target.value })
+              }
             />
             <input
               placeholder="PIN Code"
               className="border rounded px-3 py-2"
               value={address.postalCode}
-              onChange={(e) => setAddress({ ...address, postalCode: e.target.value })}
+              onChange={(e) =>
+                setAddress({ ...address, postalCode: e.target.value })
+              }
             />
             <input
               placeholder="Country"
               className="border rounded px-3 py-2"
               value={address.country}
-              onChange={(e) => setAddress({ ...address, country: e.target.value })}
+              onChange={(e) =>
+                setAddress({ ...address, country: e.target.value })
+              }
             />
           </div>
         </div>
@@ -255,8 +278,13 @@ export default function CheckoutPage() {
             <option value="">-- Choose a coupon --</option>
             {activeCoupons.map((c) => (
               <option key={c._id} value={c.code}>
-                {c.code} — {c.discountType === "percentage" ? `${c.value}% off` : `₹${c.value} off`}
-                {Number(c?.minOrderAmount || 0) > 0 ? ` (min ₹${c.minOrderAmount})` : ""}
+                {c.code} —{" "}
+                {c.discountType === "percentage"
+                  ? `${c.value}% off`
+                  : `₹${c.value} off`}
+                {Number(c?.minOrderAmount || 0) > 0
+                  ? ` (min ₹${c.minOrderAmount})`
+                  : ""}
               </option>
             ))}
           </select>
@@ -287,15 +315,19 @@ export default function CheckoutPage() {
 
               <div className="text-center text-gray-700 mb-2">
                 <p className="font-medium">
-                  <span className="text-gray-600">UPI ID:</span> <b>roshara@upi</b>
+                  <span className="text-gray-600">UPI ID:</span>{" "}
+                  <b>roshara@upi</b>
                 </p>
                 <p>
-                  <span className="text-gray-600">Amount:</span> ₹{estimated.total}
+                  <span className="text-gray-600">Amount:</span> ₹
+                  {estimated.total}
                 </p>
               </div>
 
               <div className="mt-4 w-full">
-                <label className="text-sm font-medium block mb-1">Enter UPI Transaction ID</label>
+                <label className="text-sm font-medium block mb-1">
+                  Enter UPI Transaction ID
+                </label>
                 <input
                   type="text"
                   value={transactionId}
@@ -332,7 +364,9 @@ export default function CheckoutPage() {
 
         {estimated.discount > 0 && (
           <div className="flex justify-between text-sm mt-1 text-green-700">
-            <span>Discount{selectedCoupon ? ` (${selectedCoupon.code})` : ""}</span>
+            <span>
+              Discount{selectedCoupon ? ` (${selectedCoupon.code})` : ""}
+            </span>
             <span>-₹{estimated.discount}</span>
           </div>
         )}
