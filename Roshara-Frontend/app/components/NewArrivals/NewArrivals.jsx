@@ -78,8 +78,8 @@ export default function NewArrivals() {
           </h2>
 
           {/* Right Section - Subheading + Button */}
-          <div className="flex flex-col items-start md:items-end text-end max-w-sm">
-            <p className="text-sm font-normal text-gray-700 mb-0.5 leading-relaxed">
+          <div className="flex flex-col items-start md:items-end text-end max-w-sm pt-5">
+            <p className="text-[#4A1718] text-md font-bold mb-4 md:mb-0">
               From effortless everyday wear to festive statements, find the
               styles that make you feel beautifully you.
             </p>

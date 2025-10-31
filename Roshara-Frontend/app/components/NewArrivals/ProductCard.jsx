@@ -5,7 +5,7 @@ import { Search, ShoppingCart, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useCart } from "../../../context/CartContext";
 import { useWishlist } from "../../../context/WishlistContext";
-import { ROSHARA_SIZES } from "../../constants/sizes"; // <- make sure this exists
+import { ROSHARA_SIZES } from "../../constants/sizes"; // make sure this file exists
 
 // Build absolute URL for uploaded images
 const API_BASE =
@@ -19,7 +19,7 @@ const urlFor = (src) => {
   return src;
 };
 
-// Normalize sizes to simple strings (handles objects or strings)
+// Normalize sizes to simple strings
 function normalizeSizes(input) {
   const arr = Array.isArray(input) ? input : [];
   const normalized = arr
@@ -60,10 +60,10 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
     return () => clearInterval(t);
   }, [hovering, images.length]);
 
-  // sizes: prefer product.sizes; else use ROSHARA_SIZES (long set)
+  // sizes: prefer product.sizes; else use ROSHARA_SIZES
   const sizeOptions = (() => {
     const norm = normalizeSizes(product?.sizes);
-    return norm.length ? norm : ROSHARA_SIZES; // <- key change
+    return norm.length ? norm : ROSHARA_SIZES;
   })();
 
   // preselect first size when opening panel
@@ -98,7 +98,7 @@ export default function ProductCard({ product, onSearch, size = "md" }) {
           sizes="(max-width: 768px) 100vw, 33vw"
         />
 
-        {/* Icons on hover */}
+        {/* hover icons */}
         <div className="absolute top-5 right-3 flex flex-col items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
           <button
             onClick={(e) => {
