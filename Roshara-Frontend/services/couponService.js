@@ -37,6 +37,7 @@ export const createCouponAdmin = async (token, payload) => {
     throw err;
   }
 };
+
 export const updateCouponAdmin = async (token, id, payload) => {
   try {
     const { data } = await axios.put(`${API_BASE_URL}/coupons/${id}`, payload, {

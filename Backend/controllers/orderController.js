@@ -1,8 +1,8 @@
 // controllers/orderController.js
 import asyncHandler from "express-async-handler";
-import Order from "../models/Order.js";
-import Product from "../models/Product.js";
-import Coupon from "../models/Coupon.js";
+import Order from "../models/orderModel.js";
+import Product from "../models/productModel.js";
+import Coupon from "../models/couponModel.js";
 import User from "../models/userModel.js";
 
 export const createOrder = asyncHandler(async (req, res) => {

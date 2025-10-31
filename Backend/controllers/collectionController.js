@@ -1,5 +1,5 @@
-import Collection from "../models/Collection.js";
-import Product from "../models/Product.js";
+import Collection from "../models/collectionModel.js";
+import Product from "../models/productModel.js";
 
 // ✅ Create a new collection
 export const createCollection = async (req, res) => {

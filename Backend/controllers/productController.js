@@ -1,6 +1,6 @@
 // controllers/productController.js
-import Product from "../models/Product.js";
-import Collection from "../models/Collection.js";
+import Product from "../models/productModel.js";
+import Collection from "../models/collectionModel.js";
 
 async function resolveCollectionId(collectionInput) {
   if (!collectionInput) return null;
